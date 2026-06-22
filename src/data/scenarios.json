@@ -1,0 +1,74 @@
+[
+  {
+    "scenario": "The Impossible Pass (不可思议的穿透球)",
+    "game_time": "88:42",
+    "score": "Team A 0 - 0 Team B",
+    "match_context": "联赛决赛，伤停补时最后3分钟",
+    "attacking_player": {
+      "role": "Playmaker (组织中场)",
+      "x": 65,
+      "y": 40,
+      "description": "拿球在中场弧顶，被3人包围"
+    },
+    "defenders_in_path": 3,
+    "passing_lane_width_meters": 0.8,
+    "predicted_success_rate": "5.2%",
+    "actual_outcome": "成功穿透，助攻球员单刀破门绝杀",
+    "key_difficulty_factors": [
+      "传球通道仅比足球宽2厘米",
+      "防守球员处于最佳拦截位置",
+      "比赛末段体能下降，技术动作容易变形"
+    ]
+  },
+  {
+    "scenario": "The Corner Kick Trap (角球陷阱)",
+    "game_time": "67:15",
+    "score": "Team A 1 - 1 Team B",
+    "match_context": "淘汰赛半决赛，谁进球谁晋级",
+    "set_piece_type": "corner_kick",
+    "attacking_players_in_box": 6,
+    "defending_players_in_box": 8,
+    "kick_taker": {
+      "role": "Winger (边锋)",
+      "x": 0,
+      "y": 95,
+      "preferred_foot": "right",
+      "description": "右脚角球专家，本赛季100%角球传中率"
+    },
+    "target_zone": {
+      "description": "近门柱区域",
+      "space_available_sq_meters": 1.2,
+      "marked_by": 3
+    },
+    "trick_play": {
+      "type": "short_corner_disguise",
+      "description": "假装传中，实际短传给接应队友，然后低平球扫向小禁区边缘"
+    },
+    "predicted_success_rate": "3.8%",
+    "actual_outcome": "短角球配合成功，接应球员抽射破门"
+  },
+  {
+    "scenario": "The Solo Run (独闯龙潭)",
+    "game_time": "23:50",
+    "score": "Team A 0 - 1 Team B",
+    "match_context": "客场落后，需要一次个人能力来突破局面",
+    "dribbling_player": {
+      "role": "Forward (前锋)",
+      "x": 40,
+      "y": 55,
+      "description": "在中场边缘拿球，开始向球门突进"
+    },
+    "defenders_beaten": 4,
+    "dribble_distance_meters": 42,
+    "dribble_speed_kmh": 31.2,
+    "touches_during_run": 11,
+    "defensive_positions": [
+      {"defender": 1, "beaten_at": "midfield", "technique": "假动作变向"},
+      {"defender": 2, "beaten_at": "midfield", "technique": "人球分过"},
+      {"defender": 3, "beaten_at": "penalty_arc", "technique": "快速变向切入"},
+      {"defender": 4, "beaten_at": "six_yard_box", "technique": "拉球过人后射门"}
+    ],
+    "predicted_success_rate": "2.6%",
+    "actual_outcome": "连过四人后穿装式射门得分，被誉为“赛季最佳进球”"
+  }
+]
