@@ -8,12 +8,10 @@ from .templates import (
     SYSTEM_PROMPT,
     USER_PROMPT_TEMPLATE,
     build_user_prompt,
-    build_messages,
 )
 
 __all__ = [
     "SYSTEM_PROMPT",
     "USER_PROMPT_TEMPLATE",
     "build_user_prompt",
-    "build_messages",
 ]

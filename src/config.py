@@ -34,7 +34,7 @@ DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 API_TIMEOUT = 60
 
 # 最大 Token 数（留给 LLM 回复的空间）
-MAX_TOKENS = 1024
+MAX_TOKENS = 2048
 
 # 生成温度（0.7 = 有创意但不离谱）
 TEMPERATURE = 0.7
