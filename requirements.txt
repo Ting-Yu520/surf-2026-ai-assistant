@@ -1,0 +1,23 @@
+# SURF-2026 AI Tactical Assistant — Python 依赖
+
+# Core
+streamlit>=1.32.0
+
+# LLM API (OpenAI-compatible)
+openai>=1.30.0
+
+# Data & Validation
+pydantic>=2.7.0
+jsonschema>=4.22.0
+
+# Utils
+python-dotenv>=1.0.1
+loguru>=0.7.2
+
+# Testing
+pytest>=8.2.0
+pytest-asyncio>=0.23.0
+
+# Future (Phase 2)
+# pillow>=10.3.0          # VLM 图像处理
+# opencv-python>=4.10.0   # 关键帧提取
