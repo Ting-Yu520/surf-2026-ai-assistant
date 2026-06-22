@@ -3,8 +3,9 @@
 # Core
 streamlit>=1.32.0
 
-# LLM API (OpenAI-compatible)
-openai>=1.30.0
+# LLM API (Anthropic 兼容格式 → DeepSeek)
+anthropic>=0.100.0
+openai>=1.30.0  # 备用
 
 # Data & Validation
 pydantic>=2.7.0

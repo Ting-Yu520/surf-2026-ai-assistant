@@ -16,7 +16,7 @@ import streamlit as st
 import json
 import time
 from pathlib import Path
-from openai import OpenAI
+from anthropic import Anthropic
 
 # 项目模块
 from config import (
@@ -95,18 +95,41 @@ def validate_json(json_str: str) -> tuple[bool, dict | str]:
         return False, f"❌ JSON 格式错误（第{e.lineno}行）：{e.msg}"
 
 def call_llm(api_key: str, scenario_data: dict) -> tuple[bool, str]:
+    """
+    通过 Anthropic 兼容端点调用 DeepSeek V4。
+
+    DeepSeek 的 Anthropic 兼容端点接受标准 Anthropic Messages API 格式。
+    system prompt 作为顶层参数传入，user message 放在 messages 列表中。
+    """
     try:
-        client = OpenAI(api_key=api_key, base_url=DEEPSEEK_BASE_URL, timeout=float(API_TIMEOUT))
-        user_prompt = build_user_prompt(scenario_data)
-        messages = [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": user_prompt},
-        ]
-        response = client.chat.completions.create(
-            model=DEEPSEEK_MODEL, messages=messages,
-            max_tokens=MAX_TOKENS, temperature=TEMPERATURE,
+        # 初始化 Anthropic 客户端（指向 DeepSeek 代理）
+        client = Anthropic(
+            api_key=api_key,
+            base_url=DEEPSEEK_BASE_URL,
+            timeout=float(API_TIMEOUT),
         )
-        return True, response.choices[0].message.content
+
+        # 构建 User Prompt（System Prompt 单独传入）
+        user_prompt = build_user_prompt(scenario_data)
+
+        # 调用 Anthropic Messages API
+        response = client.messages.create(
+            model=DEEPSEEK_MODEL,
+            max_tokens=MAX_TOKENS,
+            temperature=TEMPERATURE,
+            system=SYSTEM_PROMPT,  # Anthropic: system 是顶层参数
+            messages=[
+                {"role": "user", "content": user_prompt}
+            ],
+        )
+
+        # 提取生成文本（跳过 ThinkingBlock，只取 TextBlock）
+        text_parts = []
+        for block in response.content:
+            if hasattr(block, 'text'):
+                text_parts.append(block.text)
+        generated_text = '\n'.join(text_parts) if text_parts else '(模型未返回文本内容)'
+        return True, generated_text
     except Exception as e:
         err = str(e)
         if "401" in err or "auth" in err.lower():

@@ -17,14 +17,15 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 # LLM 配置
 # ============================================================
 
-# DeepSeek OpenAI 兼容端点
+# DeepSeek Anthropic 兼容端点
+# deepseek-v4-pro / deepseek-v4-flash 走 Anthropic Messages API
 DEEPSEEK_BASE_URL = os.getenv(
     "DEEPSEEK_BASE_URL",
-    "https://api.deepseek.com/v1"
+    "https://api.deepseek.com/anthropic"
 )
 
-# 模型名称：deepseek-chat (V3) 或 deepseek-reasoner (R1)
-DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+# 模型名称
+DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-v4-pro")
 
 # API Key 优先级：环境变量 > .env 文件
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
