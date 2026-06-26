@@ -15,7 +15,7 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 # VLM 配置 — Gemini 1.5 Flash (免费)
 # ============================================================
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
 GEMINI_TIMEOUT = 120
 
 # ============================================================
