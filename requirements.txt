@@ -3,9 +3,17 @@
 # Core
 streamlit>=1.32.0
 
-# LLM API (Anthropic 兼容格式 → DeepSeek)
+# LLM API (Anthropic 兼容格式 → DeepSeek V4)
 anthropic>=0.100.0
-openai>=1.30.0  # 备用
+
+# VLM API (Gemini 视频分析)
+google-genai>=0.3.0
+
+# TTS (Edge TTS, 免费)
+edge-tts>=6.1.0
+
+# Video Processing
+moviepy>=2.0.0
 
 # Data & Validation
 pydantic>=2.7.0
@@ -14,11 +22,8 @@ jsonschema>=4.22.0
 # Utils
 python-dotenv>=1.0.1
 loguru>=0.7.2
+Pillow>=10.0.0
 
 # Testing
 pytest>=8.2.0
 pytest-asyncio>=0.23.0
-
-# Future (Phase 2)
-# pillow>=10.3.0          # VLM 图像处理
-# opencv-python>=4.10.0   # 关键帧提取

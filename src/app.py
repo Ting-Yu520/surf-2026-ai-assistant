@@ -1,182 +1,161 @@
 """
-SURF-2026-0154 AI Tactical Assistant — Demo
-============================================
-演示流程：真实比赛瞬间 → AI 提取战术 JSON → LLM 生成通俗故事
+SURF-2026-0154 AI Tactical Translator — Streamlit App
 
-设计原则：极简、两栏对比、真实数据。
+端到端流程：
+  上传角球视频 → VLM (Gemini) 提取 JSON → LLM (DeepSeek) 生成叙事
+  → TTS (Edge) 配音 → 合成科普短视频
 """
 
 import streamlit as st
 import json
 import time
-from anthropic import Anthropic
+import tempfile
+from pathlib import Path
 
-from config import (
-    DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, DEEPSEEK_API_KEY,
-    API_TIMEOUT, MAX_TOKENS, TEMPERATURE, load_scenarios,
-)
-from prompts.templates import SYSTEM_PROMPT, build_user_prompt
+from pipeline import process_corner_kick
+from config import OUTPUT_DIR
 
-# ── 页面 ───────────────────────────────────────────────
-st.set_page_config(page_title="AI Tactical Translator", page_icon="⚽", layout="wide")
+st.set_page_config(page_title="AI Tactical Translator · CORNER KICK", page_icon="⚽", layout="wide")
 
 st.markdown("""
 <style>
-    .stButton > button { font-size: 1.05rem; font-weight: 600; padding: 0.5rem 2.5rem; border-radius: 8px; }
-    .stTextArea textarea { font-family: 'Consolas','Monaco',monospace; font-size: 0.85rem; }
-    .pipeline-box { background:#f8f9fa; border:1px solid #e0e0e0; border-radius:10px; padding:0.8rem 1.2rem; text-align:center; }
-    .story-card { background:#fafafa; border:1px solid #e0e0e0; border-radius:10px; padding:1.5rem 1.8rem; line-height:1.9; font-size:0.95rem; color:#222; }
-    .video-ref { background:#fffbf0; border:1px solid #f0d060; border-radius:6px; padding:0.5rem 1rem; font-size:0.85rem; margin:0.5rem 0; }
+    .stButton > button { font-size: 1rem; font-weight: 600; padding: 0.5rem 2rem; border-radius: 8px; }
+    .pipeline-box { background:#f8f9fa; border:1px solid #e0e0e0; border-radius:8px; padding:0.6rem 1rem; text-align:center; font-size:0.85rem; }
+    .pipeline-active { border:2px solid #4a90d9; background:#f0f5ff; }
+    .step-done { color: #2d8a2d; font-weight:600; }
+    .story-card { background:#fafafa; border:1px solid #e0e0e0; border-radius:10px; padding:1.5rem; line-height:1.9; font-size:0.95rem; }
 </style>
 """, unsafe_allow_html=True)
 
 
-# ── 辅助函数 ────────────────────────────────────────────
-def validate_json(s: str) -> tuple[bool, dict | str]:
-    try:
-        data = json.loads(s)
-        if not isinstance(data, dict):
-            return False, f"JSON 必须是对象，不是 {type(data).__name__}"
-        return True, data
-    except json.JSONDecodeError as e:
-        return False, f"JSON 格式错误（第{e.lineno}行）：{e.msg}"
-
-def call_llm(api_key: str, data: dict) -> tuple[bool, str]:
-    try:
-        client = Anthropic(api_key=api_key, base_url=DEEPSEEK_BASE_URL, timeout=float(API_TIMEOUT))
-        response = client.messages.create(
-            model=DEEPSEEK_MODEL, max_tokens=MAX_TOKENS, temperature=TEMPERATURE,
-            system=SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": build_user_prompt(data)}],
-        )
-        parts = [b.text for b in response.content if hasattr(b, 'text')]
-        return True, '\n\n'.join(parts) if parts else '(未生成文本)'
-    except Exception as e:
-        err = str(e)
-        if "401" in err or "auth" in err.lower(): return False, "🔑 API Key 无效。"
-        elif "429" in err: return False, "⏳ 请求太频繁，稍等几秒。"
-        elif "timeout" in err.lower(): return False, "⏰ 请求超时，请重试。"
-        return False, f"调用失败：{err[:300]}"
-
-
-# ── 主界面 ──────────────────────────────────────────────
 def main():
-    # 标题
     st.markdown("""
     <div style="text-align:center; padding:0.5rem 0 0.5rem 0;">
-        <h1 style="margin:0; font-size:1.8rem;">⚽ AI Tactical Translator</h1>
-        <p style="color:#666; margin:0.2rem 0 0 0;">真实比赛瞬间 → 结构化战术数据 → <b>人人都能理解的故事</b></p>
+        <h1 style="margin:0; font-size:1.8rem;">⚽ AI 角球战术翻译官</h1>
+        <p style="color:#666; margin:0.2rem 0 0 0;">
+            上传 2026 世界杯角球视频 → AI 生成人人都能懂的科普短视频
+        </p>
     </div>
     """, unsafe_allow_html=True)
 
-    # ── 三步流水线 ──
-    c1, c2, c3, c4, c5 = st.columns([1, 0.1, 1, 0.1, 1])
+    # ── 管线可视化 ──
+    c1, c2, c3, c4, c5, c6, c7, c8, c9 = st.columns([1, 0.05, 1, 0.05, 1, 0.05, 1, 0.05, 1])
     with c1:
-        st.markdown('<div class="pipeline-box">📹 <b>Step 1</b><br><small>真实比赛片段<br>(公开视频)</small></div>', unsafe_allow_html=True)
+        st.markdown('<div class="pipeline-box">📹<br><b>上传视频</b></div>', unsafe_allow_html=True)
     with c2:
-        st.markdown('<div style="text-align:center; font-size:1.5rem; color:#aaa; padding-top:0.5rem;">→</div>', unsafe_allow_html=True)
+        st.markdown('<div style="text-align:center;color:#aaa;">→</div>', unsafe_allow_html=True)
     with c3:
-        st.markdown('<div class="pipeline-box">📊 <b>Step 2</b><br><small>VLM 提取<br>战术 JSON</small></div>', unsafe_allow_html=True)
+        st.markdown('<div class="pipeline-box">🔍<br><b>Gemini<br>分析</b></div>', unsafe_allow_html=True)
     with c4:
-        st.markdown('<div style="text-align:center; font-size:1.5rem; color:#aaa; padding-top:0.5rem;">→</div>', unsafe_allow_html=True)
+        st.markdown('<div style="text-align:center;color:#aaa;">→</div>', unsafe_allow_html=True)
     with c5:
-        st.markdown('<div class="pipeline-box" style="border:2px solid #4a90d9;">📖 <b>Step 3</b><br><small>LLM 生成<br>通俗故事</small></div>', unsafe_allow_html=True)
+        st.markdown('<div class="pipeline-box">🧠<br><b>DeepSeek<br>叙事</b></div>', unsafe_allow_html=True)
+    with c6:
+        st.markdown('<div style="text-align:center;color:#aaa;">→</div>', unsafe_allow_html=True)
+    with c7:
+        st.markdown('<div class="pipeline-box">🎙️<br><b>AI 配音</b></div>', unsafe_allow_html=True)
+    with c8:
+        st.markdown('<div style="text-align:center;color:#aaa;">→</div>', unsafe_allow_html=True)
+    with c9:
+        st.markdown('<div class="pipeline-box pipeline-active">📺<br><b>科普视频</b></div>', unsafe_allow_html=True)
 
     st.divider()
 
-    # ── 场景选择 ──
-    scenarios = load_scenarios()
-    scenario_names = list(scenarios.keys())
+    # ── 输入区 ──
+    tab1, tab2 = st.tabs(["📹 上传视频", "📝 手工 JSON (调试用)"])
 
-    # 用 selectbox 做场景切换
-    selected = st.selectbox(
-        "选择演示场景",
-        scenario_names,
-        format_func=lambda x: x.split(' — ')[0] if ' — ' in x else x,
-    )
-    scenario = scenarios[selected]
+    uploaded_video = None
+    manual_json = None
 
-    # ── 视频参考 ──
-    video_ref = scenario.get("video_reference", "")
-    match_info = f"{scenario.get('competition','')} · {scenario.get('date','')}"
-    with st.expander(f"📹 视频参考：{match_info}", expanded=True):
-        st.markdown(f"""
-        **比赛：** {scenario.get('match', '')} — {scenario.get('competition', '')} ({scenario.get('date', '')})
-
-        **🎬 视频连接：** {video_ref}
-
-        **比赛背景：** {scenario.get('match_context', '')}
-        """)
-        # 关键战术洞察
-        insight = scenario.get("key_tactical_insight", scenario.get("why_extraordinary", ""))
-        if insight:
-            st.info(f"💡 **核心战术亮点：** {insight}")
-
-    # ── 两栏：左 JSON / 右 Story ──
-    left, right = st.columns([1, 1], gap="large")
-
-    with left:
-        st.markdown("### 📊 战术数据 (JSON)")
-        st.caption("Step 2 产物 — VLM 从视频中提取的结构化数据。Phase 1 用模拟数据，Phase 2 替换为真实 VLM 输出。")
-
-        json_str = json.dumps(scenario, indent=2, ensure_ascii=False)
-        key = f"json_{selected}"
-        if key not in st.session_state:
-            st.session_state[key] = json_str
-
-        edited = st.text_area(
-            "战术数据", value=st.session_state[key], height=360,
-            key=f"ta_{selected}", label_visibility="collapsed",
+    with tab1:
+        st.markdown("### 上传角球视频片段")
+        st.caption("支持 mp4 / mov / avi。选择 2026 世界杯中的角球瞬间（15-30 秒最佳）。")
+        uploaded_file = st.file_uploader(
+            "选择视频文件", type=["mp4", "mov", "avi"],
+            label_visibility="collapsed",
         )
-        st.session_state[key] = edited
+        if uploaded_file:
+            # 保存到临时文件
+            tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
+            tmp.write(uploaded_file.read())
+            uploaded_video = tmp.name
+            st.video(uploaded_file)
+            st.success(f"✅ 视频已上传 ({uploaded_file.size / 1024:.1f} KB)")
 
-        # 关键数字高亮
-        st.caption(
-            f"⏱ {scenario.get('game_time','')}  "
-            f"⚽ {scenario.get('score','')}  "
-            f"🎯 预测成功率 {scenario.get('predicted_success_rate','')}"
+    with tab2:
+        st.markdown("### 手工输入角球 JSON")
+        st.caption("跳过 VLM 步骤，直接使用手工 JSON 测试 Prompt 和配音效果。")
+        manual_json_str = st.text_area(
+            "角球战术 JSON", height=250, label_visibility="collapsed",
+            placeholder='{"scenario": "corner_kick", ...}',
+        )
+        if manual_json_str.strip():
+            try:
+                manual_json = json.loads(manual_json_str)
+                st.success("✅ JSON 格式有效")
+            except json.JSONDecodeError as e:
+                st.error(f"JSON 无效: {e}")
+
+    st.divider()
+
+    # ── 执行按钮 ──
+    col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
+    with col_btn2:
+        can_run = bool(uploaded_video or manual_json)
+        run = st.button(
+            "🎙️ 生成 AI 科普短视频",
+            use_container_width=True,
+            disabled=not can_run,
         )
 
-    with right:
-        st.markdown("### 📖 通俗故事")
-        st.caption("Step 3 产物 — LLM 将 JSON 转化为零足球知识门槛的情感叙事。")
+    # ── 输出区 ──
+    st.divider()
 
-        placeholder = st.empty()
+    if run:
+        progress = st.status("处理中...", expanded=True)
 
-        generate = st.button("🎙️ 生成 AI 解说", use_container_width=True)
+        # Step 1
+        progress.write("🔍 Step 1/4: Gemini VLM 分析角球场景...")
+        t0 = time.time()
 
-        if generate:
-            ok, result = validate_json(edited)
-            if not ok:
-                placeholder.error(result)
-                st.stop()
+        result = process_corner_kick(
+            video_path=uploaded_video,
+            scenario_json=manual_json,
+        )
+        progress.write(f"✅ Step 1/4 完成 ({time.time()-t0:.1f}s)")
 
-            with st.spinner("AI 正在将战术数据转化为故事..."):
-                t0 = time.time()
-                success, output = call_llm(DEEPSEEK_API_KEY, result)
-                elapsed = time.time() - t0
+        # 显示 JSON
+        with st.expander("📊 提取的战术 JSON"):
+            st.json(result["json_data"])
 
-            if success:
-                placeholder.markdown(f'<div class="story-card">{output}</div>', unsafe_allow_html=True)
-                st.caption(f"⚡ {elapsed:.1f}s · {DEEPSEEK_MODEL}")
-            else:
-                placeholder.error(output)
-        else:
-            placeholder.markdown("""
-            <div style="background:#fafafa; border:1px dashed #ddd; border-radius:10px;
-                 padding:2rem 1.5rem; text-align:center; color:#999;">
-                <p style="font-size:2rem; margin:0;">🎙️</p>
-                <p style="margin:0.3rem 0 0 0;">点击左侧按钮<br><b>"生成 AI 解说"</b></p>
-                <p style="font-size:0.8rem; margin:0.3rem 0 0 0; color:#ccc;">
-                    左侧 JSON → 右侧故事
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
+        # 显示叙事
+        st.markdown("### 📖 AI 生成的通俗故事")
+        st.markdown(f'<div class="story-card">{result["narration_text"]}</div>', unsafe_allow_html=True)
+
+        # 播放音频
+        if result.get("audio_path"):
+            st.markdown("### 🎙️ AI 配音")
+            st.audio(result["audio_path"])
+
+        # 播放视频
+        if result.get("output_video") and Path(result["output_video"]).exists():
+            st.markdown("### 📺 最终科普短视频")
+            st.video(result["output_video"])
+            st.success(f"🎉 全部完成！总耗时 {result['elapsed']:.1f}s")
+
+    else:
+        st.markdown("""
+        <div style="background:#fafafa; border:1px dashed #ddd; border-radius:10px;
+             padding:2rem; text-align:center; color:#999;">
+            <p style="font-size:2rem;">⚽</p>
+            <p>上传一段 2026 世界杯角球视频<br>点击按钮，看 AI 如何让它变得人人能懂</p>
+        </div>
+        """, unsafe_allow_html=True)
 
     st.divider()
     st.markdown("""
     <div style="text-align:center; color:#999; font-size:0.75rem;">
-        SURF-2026-0154 · Generative HCI for Sports Analytics<br>
+        SURF-2026-0154 · Generative HCI for Sports Analytics · Corner Kick Demo<br>
         Ting-Yu (IMIS, XJTLU) · Dr. Nanlin Jin & Dr. Thomas Selig
     </div>
     """, unsafe_allow_html=True)
