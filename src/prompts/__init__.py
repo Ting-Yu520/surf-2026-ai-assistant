@@ -1,17 +1,5 @@
-"""
-Prompt Templates — SURF-2026 AI Tactical Assistant 核心 IP
-
-所有 Prompt 设计遵循 [[surf-2026-project-init]] 中定义的 5 项原则。
-"""
-
-from .templates import (
-    SYSTEM_PROMPT,
-    USER_PROMPT_TEMPLATE,
-    build_user_prompt,
+"""Prompt Templates — SURF-2026 AI Tactical Assistant 核心 IP"""
+from .corner_kick import (
+    build_education_prompt, build_excite_prompt, parse_excite_output,
+    EDUCATION_SYSTEM_PROMPT, EDUCATION_USER_TEMPLATE,
 )
-
-__all__ = [
-    "SYSTEM_PROMPT",
-    "USER_PROMPT_TEMPLATE",
-    "build_user_prompt",
-]

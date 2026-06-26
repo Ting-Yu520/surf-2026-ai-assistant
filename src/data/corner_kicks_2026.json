@@ -1,9 +1,10 @@
 {
   "dataset": "2026 FIFA World Cup Corner Kicks",
-  "version": "1.0",
+  "version": "2.0",
   "last_updated": "2026-06-26",
-  "description": "Real corner kick events from the 2026 FIFA World Cup (June 11 – July 19, 2026). Each entry includes match metadata, video source URLs, and tactical notes for VLM extraction + LLM narrative generation.",
-  "total_entries": 8,
+  "description": "Real corner kick events from the 2026 FIFA World Cup (June 11 – July 19, 2026). Each entry includes match metadata, video source URLs, and tactical notes for VLM extraction + LLM narrative generation. v2.0: Full catch-up of all group stage corner goals (June 11-26).",
+  "total_entries": 16,
+  "collection_status": "Full catch-up completed for Group Stage (June 11-26). Daily batch collection active from June 27.",
   "entries": [
     {
       "id": "wc2026-corner-001",
@@ -18,8 +19,7 @@
       "goal_type": "header_near_post",
       "result": "goal",
       "video_urls": [
-        "https://www.fox.com/watch/clip/fmc-6ft6ov5up6kdrfjy/netherlands-jan-paul-van-hecke-scores-header-off-corner-vs-tunisia-2026-fifa-world-cup",
-        "https://www.fox.com/watch/clip/fmc-iwqtyj5zv6zcs0ep/netherlands-extends-lead-with-a-header-from-a-corner-kick"
+        "https://sports.cctv.cn/2026/06/26/VIDE0Nor5pTvJsRmfW30yugU260626.shtml"
       ],
       "tactical_note": "Near-post header from right-side corner. Van Hecke lost his marker with a quick step-back then burst forward. Clean header off the crossbar and in."
     },
@@ -35,7 +35,9 @@
       "goal_scorer": "Mastouri",
       "goal_type": "header_penalty_spot",
       "result": "goal",
-      "video_urls": [],
+      "video_urls": [
+        "https://sports.cctv.cn/2026/06/26/VIDE6x0U7LD1oJB23m4aBGNw260626.shtml"
+      ],
       "tactical_note": "Corner delivered to penalty spot area. Mastouri rose between defenders to head home. Tunisia's consolation goal."
     },
     {
@@ -51,7 +53,7 @@
       "goal_type": "scramble_finish",
       "result": "goal",
       "video_urls": [
-        "https://www.fox.com/watch/clip/fmc-lv4amjb31pj9smac/auston-trusty-scores-from-corner-to-put-united-states-ahead-of-t-rkiye-2026-fifa-world-cup"
+        "https://sports.cctv.com/2026/06/26/VIDEir1PFDQkAuldDjgscuXs260626.shtml"
       ],
       "tactical_note": "Early goal from a corner scramble. Ball bounced around in the box after the corner delivery, Trusty reacted first to poke it home. His first USMNT goal."
     },
@@ -59,7 +61,7 @@
       "id": "wc2026-corner-004",
       "match": "Algeria vs Jordan",
       "group": "Group J",
-      "date": "2026-06-24",
+      "date": "2026-06-23",
       "minute": "69",
       "score_at_time": "Algeria 0-1 Jordan",
       "corner_type": "in-swinging_right",
@@ -67,23 +69,29 @@
       "goal_scorer": "Nadhir Benbouali",
       "goal_type": "header_center",
       "result": "goal",
-      "video_urls": [],
+      "video_urls": [
+        "http://pc.dongqiudi.com/articles/5959581.html",
+        "http://www.ppsport.com/article/news/2561086.html"
+      ],
       "tactical_note": "Mahrez delivers from right corner. Benbouali rises highest in the center of the box. Powerful header equalizer. Algeria's first goal of the match."
     },
     {
       "id": "wc2026-corner-005",
       "match": "Algeria vs Jordan",
       "group": "Group J",
-      "date": "2026-06-24",
+      "date": "2026-06-23",
       "minute": "82",
       "score_at_time": "Algeria 1-1 Jordan",
       "corner_type": "deflected",
-      "kick_taker": "Riyad Mahrez",
+      "kick_taker": "Anis Hadj Moussa",
       "goal_scorer": "Amine Gouiri",
       "goal_type": "rebound_finish",
       "result": "goal",
-      "video_urls": [],
-      "tactical_note": "Another Mahrez corner, deflected in the box. Gouiri reacted quickest to the loose ball, slotting home from close range. Algeria's first WC win after conceding first since 2014."
+      "video_urls": [
+        "http://pc.dongqiudi.com/articles/5959581.html",
+        "http://www.ppsport.com/article/news/2561086.html"
+      ],
+      "tactical_note": "Hadj Moussa corner, Bensebaini header blocked, Gouiri reacted quickest to flick the loose ball past goalkeeper. VAR confirmed. Algeria's first WC win after conceding first since 2014."
     },
     {
       "id": "wc2026-corner-006",
@@ -93,11 +101,13 @@
       "minute": "45+5",
       "score_at_time": "DR Congo 0-1 Portugal",
       "corner_type": "short_corner",
-      "kick_taker": "Masuaku",
+      "kick_taker": "Arthur Masuaku",
       "goal_scorer": "Yoane Wissa",
       "goal_type": "header_from_short",
       "result": "goal",
-      "video_urls": [],
+      "video_urls": [
+        "https://k.sina.cn/article_5262898489_m139b175390330139l8.html"
+      ],
       "tactical_note": "Short corner routine: Masuaku played a quick 1-2, created an overload on the flank, crossed to Wissa unmarked. DR Congo's first World Cup goal in 52 years."
     },
     {
@@ -130,16 +140,153 @@
       "goal_type": "tap_in",
       "result": "goal",
       "video_urls": [
-        "https://www.fox.com/watch/clip/fmc-c0z89q7kuu195r63/cristiano-ronaldo-taps-in-a-goal-to-extend-portugal-s-lead"
+        "http://pc.dongqiudi.com/articles/5959581.html"
       ],
       "tactical_note": "Corner swung in, headed toward goal, Ronaldo positioned perfectly at the far post for a simple tap-in. Classic poacher's goal from a set piece."
+    },
+    {
+      "id": "wc2026-corner-009",
+      "match": "Japan vs Netherlands",
+      "group": "Group F",
+      "date": "2026-06-14",
+      "minute": "88",
+      "score_at_time": "Japan 1-2 Netherlands",
+      "corner_type": "in-swinging",
+      "kick_taker": "Junya Ito",
+      "goal_scorer": "Daichi Kamada",
+      "goal_type": "deflected_header",
+      "result": "goal",
+      "video_urls": [
+        "https://www.bilibili.com/video/BV1azJT6tEpC/"
+      ],
+      "tactical_note": "Junya Ito corner found substitute Koki Ogawa, who outjumped Van Dijk at the near post. Ogawa's header glanced off Daichi Kamada and past Verbruggen. Late drama — Japan equalized despite massive height disadvantage against the Dutch defense."
+    },
+    {
+      "id": "wc2026-corner-010",
+      "match": "Saudi Arabia vs Uruguay",
+      "group": "Group H",
+      "date": "2026-06-15",
+      "minute": "41",
+      "score_at_time": "Saudi Arabia 0-0 Uruguay",
+      "corner_type": "in-swinging",
+      "kick_taker": "Musab Al-Juwayr",
+      "goal_scorer": "Abdulelah Al Amri",
+      "goal_type": "rebound_finish",
+      "result": "goal",
+      "video_urls": [
+        "https://k.sina.cn/article_7879923920_m1d5ae18d003301e43m.html"
+      ],
+      "tactical_note": "Al-Juwayr corner, Hassan Al Tambakti powered a bullet header that Muslera could only parry (ball also hit the post). Abdulelah Al Amri reacted quickest to bundle the rebound over the line. First time Saudi Arabia scored the opening goal in a World Cup match since 1994."
+    },
+    {
+      "id": "wc2026-corner-011",
+      "match": "Norway vs Iraq",
+      "group": "Group I",
+      "date": "2026-06-16",
+      "minute": "76",
+      "score_at_time": "Norway 2-1 Iraq",
+      "corner_type": "in-swinging_right",
+      "kick_taker": "Martin Ødegaard",
+      "goal_scorer": "Leo Østigård",
+      "goal_type": "header_far_post",
+      "result": "goal",
+      "video_urls": [
+        "https://sports.cctv.cn/2026/06/17/VIDEw1WR81ynVySo9ODq5Vvv260617.shtml"
+      ],
+      "tactical_note": "Substitute Østigård scored with his first touch of the game — just 3 minutes after coming on. Ødegaard delivered a precise right-side corner, Østigård rose above four Iraqi defenders to power a header into the far corner. First Serie A player to score at the 2026 World Cup."
+    },
+    {
+      "id": "wc2026-corner-012",
+      "match": "England vs Croatia",
+      "group": "Group L",
+      "date": "2026-06-17",
+      "minute": "42",
+      "score_at_time": "England 1-1 Croatia",
+      "corner_type": "in-swinging",
+      "kick_taker": "Declan Rice",
+      "goal_scorer": "Harry Kane",
+      "goal_type": "header_close_range",
+      "result": "goal",
+      "video_urls": [
+        "https://sports.cctv.com/2026/06/18/VIDEH1ioKrHBzubU1hjKCBAU260618.shtml"
+      ],
+      "tactical_note": "Declan Rice delivered a precise corner into the box. Croatia defenders were caught napping — Harry Kane was left completely unmarked for a free header from close range. Kane's 10th World Cup goal, tying Gary Lineker's England record."
+    },
+    {
+      "id": "wc2026-corner-013",
+      "match": "Egypt vs New Zealand",
+      "group": "Group G",
+      "date": "2026-06-22",
+      "minute": "15",
+      "score_at_time": "Egypt 0-0 New Zealand",
+      "corner_type": "in-swinging",
+      "kick_taker": "Tim Payne",
+      "goal_scorer": "Finn Surman",
+      "goal_type": "header_center",
+      "result": "goal",
+      "video_urls": [
+        "https://sports.cctv.cn/2026/06/22/VIDE8ShnYhEdzkFLu5MnXB9p260622.shtml"
+      ],
+      "tactical_note": "Tim Payne corner from the right, Finn Surman rose highest to power a header past goalkeeper Mostafa Shobeir. New Zealand's shock early lead against the run of expectations. Surman's first World Cup goal."
+    },
+    {
+      "id": "wc2026-corner-014",
+      "match": "Egypt vs New Zealand",
+      "group": "Group G",
+      "date": "2026-06-22",
+      "minute": "82",
+      "score_at_time": "Egypt 2-1 New Zealand",
+      "corner_type": "in-swinging_left",
+      "kick_taker": "Mohamed Salah",
+      "goal_scorer": "Mahmoud Trézéguet",
+      "goal_type": "diving_header",
+      "result": "goal",
+      "video_urls": [
+        "https://sports.cctv.cn/2026/06/22/VIDEiyRFjt1GPaSZHonSz72F260622.shtml"
+      ],
+      "tactical_note": "Salah delivered a left-sided corner, substitute Trézéguet made a diving header to seal Egypt's historic first-ever World Cup victory. Egypt became only the second African nation since 1966 to score two headed goals in a single World Cup match."
+    },
+    {
+      "id": "wc2026-corner-015",
+      "match": "Ecuador vs Germany",
+      "group": "Group E",
+      "date": "2026-06-25",
+      "minute": "77",
+      "score_at_time": "Ecuador 1-1 Germany",
+      "corner_type": "in-swinging",
+      "kick_taker": "Moises Caicedo",
+      "goal_scorer": "Gonzalo Plata",
+      "goal_type": "scramble_finish",
+      "result": "goal",
+      "video_urls": [
+        "https://www.panshisfj.com/news/311837.html",
+        "https://www.qiumiwu.com/video/1966246545999"
+      ],
+      "tactical_note": "Moises Caicedo right-sided corner, substitute Kevin Rodriguez flicked it on with a header across goal. Gonzalo Plata reacted quickest, poking the bouncing ball over a diving Manuel Neuer into the roof of the net. Ecuador manager Beccacece jumped into the stands to celebrate — the goal sent Ecuador through to the Round of 32."
+    },
+    {
+      "id": "wc2026-corner-016",
+      "match": "Austria vs Jordan",
+      "group": "Group J",
+      "date": "2026-06-17",
+      "minute": "76",
+      "score_at_time": "Austria 1-1 Jordan",
+      "corner_type": "in-swinging",
+      "kick_taker": "Marcel Sabitzer",
+      "goal_scorer": "Yazan Al-Arab (OG)",
+      "goal_type": "own_goal_deflection",
+      "result": "own_goal",
+      "video_urls": [
+        "https://k.sina.cn/article_5262898489_m139b175390330139e0.html"
+      ],
+      "tactical_note": "Sabitzer whipped in a corner aimed for Arnautović. Jordan defender Yazan Al-Arab, tightly marking Arnautović, saw the ball deflect off his back and into his own net. Minutes earlier Austria had a corner goal disallowed by VAR for handball — this one stood. Austria's first World Cup win in 36 years."
     }
   ],
-  "tournament_status": "Ongoing — Group Stage (June 11-26). Knockout stage begins June 28. More corner kick data will be added as tournament progresses.",
+  "tournament_status": "Group Stage completed (June 11-26). Knockout stage begins June 28 (Round of 32). Daily batch collection active for all remaining matches through July 19 final.",
   "video_sources": {
-    "fox_sports": "https://www.fox.com/watch/clip/... (US-only, may need VPN)",
-    "cctv": "http://sports.cctv.com/... (China, free)",
-    "bein_sports": "https://www.beinsports.com/... (international)",
-    "fifa_youtube": "https://www.youtube.com/@FIFA (official highlights, global)"
+    "primary": "CCTV Sports (sports.cctv.cn / sports.cctv.com) — free, China-accessible, 1080p",
+    "secondary": "Bilibili (bilibili.com) — free, China-accessible, fan-uploaded highlights",
+    "tertiary": "Sina Sports (k.sina.cn) — free, China-accessible, short clips",
+    "backup": "Dongqiudi (dongqiudi.com), PPSport (ppsport.com), Qiumiwu (qiumiwu.com) — free, full replays"
   }
 }

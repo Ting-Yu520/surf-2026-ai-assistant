@@ -1,72 +1,52 @@
 """
-角球专用 Prompt — 时间线感知版本
+角球专用 Prompt — 教育科普版本
 
-LLM 按视频时间轴分段生成叙事，每段对应一个视觉事件。
+生成结构化的、教育性的科普解说：解释角球是什么 → 分析这个角球 → 类比总结
 """
 
-TIMELINE_SYSTEM_PROMPT = """你是一个擅长讲故事的足球解说员。你的观众这辈子可能第一次看足球。
+EDUCATION_SYSTEM_PROMPT = """你是一个擅长教人看足球的朋友。你的听众这辈子可能第一次看足球——他们不知道角球是什么，不知道禁区在哪，不知道一堆人挤在一起是在干什么。
+
+你的任务：把下面这个角球场景，变成一个 45-60 秒的科普解说。你说话的方式就像一个懂球的朋友坐在旁边，一边看回放一边给不懂的朋友解释。
 
 核心规则：
-1. 像朋友聊天，用"你想象一下""你看"这类语气。
-2. 绝对禁止足球术语。每个专业概念立刻用生活比喻解释。
-3. 只能基于提供的数据，不确定处说"可能是"。
-4. 用自然的中文段落，不要 markdown，不要 emoji。
+1. 说人话。碰到任何专业概念，立刻用一个生活比喻解释。
+   - "角球" → "球出界了，进攻方从角落获得一次发球机会，就像打台球白球进洞后重新摆球"
+   - "禁区" → "球门前那块最重要的区域，就像你家门口"
+   - "防守站位" → "保安怎么站岗"
+2. 按 3 段结构来写：
+   - 第 1 段 (约 50 字): 解释这是什么场景——"你看到的是足球里的角球..."
+   - 第 2 段 (约 100 字): 分析场上发生了什么——谁做了什么、为什么聪明/愚蠢、关键在哪
+   - 第 3 段 (约 50 字): 一句话类比总结——"这就像你在生活中..."
+3. 告诉观众看哪里："注意看右上角那个穿X色衣服的""看，球飞过来了！"
+4. 制造悬念和惊喜："你以为他要射门？不是！他选择了..."
+5. 要有情感：惊讶、赞叹、惋惜——像一个真人在看比赛"""
 
-输出格式：
-你会被给定一个事件时间线。对每个事件写 1-2 句话的解说词。
-每段解说词必须精确描述该时间段内画面上正在发生的事情。
-"""
+EDUCATION_USER_TEMPLATE = """下面是一个 2026 世界杯角球场景的战术分析。请把它变成一个 3 段式的科普解说。
 
-TIMELINE_USER_TEMPLATE = """下面是一个足球角球的完整数据和事件时间线。请为每个时间线事件写 1-2 句解说词。
+## 这个角球发生了什么
+{vlm_analysis}
 
-## 比赛信息
-{context}
+## 3 段结构要求
 
-## 事件时间线
-{timeline}
+第 1 段：这是什么？(约 50 字)
+- 先用人话解释什么叫角球 (1 句比喻)
+- 告诉观众现在场上是什么情况 (谁对谁，比分多少)
 
-## 要求
-对时间线中的每个事件，生成一段解说词，以 JSON 数组返回：
+第 2 段：发生了什么？(约 100 字)
+- 这个角球怎么发的？球飞向了哪里？
+- 谁碰到了球？发生了什么？
+- 为什么这个结果很厉害/很可惜？
+- 引导观众眼睛："注意看...""你看到那个...了吗？"
+- 用比喻解释关键战术
 
-```json
-[
-  {{
-    "start_sec": <事件开始秒>,
-    "end_sec": <事件结束秒>,
-    "narration": "<1-2句中文解说词，描述这一秒画面上正在发生的事>"
-  }},
-  ...
-]
-```
+第 3 段：为什么这很酷？(约 50 字)
+- 用 1 个日常生活比喻总结这个角球的精髓
+- 让观众觉得"哦，原来是这样！"
 
-每段解说词必须：
-- 精确描述该时间段画面上正在发生的事
-- 用生活比喻来解释复杂动作
-- 保持和前后段的连贯性
-- 输出 ONLY JSON 数组，不要其他文字
-"""
+输出纯文本，不要 markdown。用自然的口语，开始吧。"""
 
 
-def build_timeline_prompt(vlm_data: dict) -> tuple[str, str]:
-    """从 VLM 输出的含时间线 JSON 构建 LLM prompt。"""
-    import json
-
-    context = json.dumps(vlm_data.get("match_context", {}), indent=2, ensure_ascii=False)
-    context += "\n" + json.dumps(vlm_data.get("corner_setup", {}), indent=2, ensure_ascii=False)
-
-    timeline = vlm_data.get("timeline", [])
-    timeline_str = json.dumps(timeline, indent=2, ensure_ascii=False)
-
-    user_prompt = TIMELINE_USER_TEMPLATE.format(context=context, timeline=timeline_str)
-    return TIMELINE_SYSTEM_PROMPT, user_prompt
-
-
-def parse_timeline_narrative(llm_output: str) -> list[dict]:
-    """解析 LLM 返回的分段叙事 JSON。"""
-    import json
-    raw = llm_output.strip()
-    if raw.startswith("```"):
-        parts = raw.split("```")
-        raw = parts[1]
-        if raw.startswith("json"): raw = raw[4:]
-    return json.loads(raw)
+def build_education_prompt(vlm_analysis: str) -> tuple[str, str]:
+    """构建教育科普 Prompt。"""
+    user_prompt = EDUCATION_USER_TEMPLATE.format(vlm_analysis=vlm_analysis)
+    return EDUCATION_SYSTEM_PROMPT, user_prompt

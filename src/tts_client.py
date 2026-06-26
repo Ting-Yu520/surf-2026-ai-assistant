@@ -48,6 +48,17 @@ async def _generate_segments(segments: list[dict], output_dir: str) -> list[dict
     return results
 
 
+def generate_audio(text: str, output_path: str) -> str:
+    """
+    生成整段中文语音（单段，非时间线版本）。
+
+    Returns:
+        str: 音频文件路径
+    """
+    asyncio.run(_generate_single(text, output_path))
+    return output_path
+
+
 def generate_timeline_audio(segments: list[dict], output_dir: str) -> list[dict]:
     """
     同步接口：逐段生成语音并返回含精确时长的分段数据。

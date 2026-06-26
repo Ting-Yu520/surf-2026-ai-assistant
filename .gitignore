@@ -26,9 +26,19 @@ Thumbs.db
 .env
 .env.local
 
-# Outputs (generated files)
-outputs/*.json
-outputs/*.txt
+# Generated outputs (rebuildable)
+outputs/videos/
+outputs/audio/
+outputs/texts/
+
+# Data (large files, rebuildable)
+data/videos/*.mp4
+
+# Scripts (keep only batch_process.py)
+scripts/download_hd.py
+scripts/download_videos.py
+scripts/setup_soccernet.py
+scripts/test_pipeline.py
 
 # Logs
 *.log
