@@ -1,17 +1,11 @@
 """
-端到端流水线 — SURF-2026 核心流程
+端到端流水线 — 时间线感知版本
 
-流程：角球视频 → VLM 提取 JSON → LLM 生成通俗叙事 → TTS 配音 → 视频合成
-
-使用方法：
-    from pipeline import process_corner_kick
-    result = process_corner_kick("corner.mp4")
-    print(result["output_video"])  # 最终视频路径
+流程：
+  视频 → VLM (时间线+JSON) → LLM (分段叙事) → TTS (逐段配音+精确时长) → Video (字幕精确对齐)
 """
 
-import time
-import json
-import logging
+import time, json, logging
 from pathlib import Path
 from anthropic import Anthropic
 
@@ -19,99 +13,81 @@ from config import (
     DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, DEEPSEEK_API_KEY,
     API_TIMEOUT, MAX_TOKENS, TEMPERATURE, OUTPUT_DIR,
 )
-from vlm_client import analyze_corner_kick, analyze_corner_kick_from_frame
-from prompts.corner_kick import CORNER_KICK_SYSTEM_PROMPT, build_corner_kick_prompt
-from tts_client import generate_audio
-from video_overlay import create_narrated_video
+from vlm_client import analyze_corner_kick
+from prompts.corner_kick import build_timeline_prompt, parse_timeline_narrative
+from tts_client import generate_timeline_audio, concat_audio_segments
+from video_overlay import create_synced_video
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def process_corner_kick(
-    video_path: str = None,
-    image_path: str = None,
-    scenario_json: dict = None,
-) -> dict:
+def process_corner_kick(video_path: str = None, scenario_json: dict = None) -> dict:
     """
-    端到端处理一个角球场景。
-
-    输入至少提供一种：
-    - video_path: 角球视频
-    - image_path: 角球关键帧
-    - scenario_json: 手工编写的 JSON (跳过 VLM 步骤)
+    端到端处理角球视频。
 
     Returns:
         {
-            "json_data": dict,          # VLM 提取或手工的 JSON
-            "narration_text": str,      # LLM 生成的通俗叙事
-            "audio_path": str,          # TTS 音频文件路径
-            "output_video": str,        # 最终合成视频路径
-            "elapsed": float,           # 总耗时
+            "vlm_data": dict,           # VLM 含时间线
+            "segments": list[dict],     # LLM 分段叙事
+            "full_audio_path": str,     # 合并后的完整音频
+            "output_video": str,        # 最终合成视频
+            "elapsed": float,
         }
     """
     t0 = time.time()
     result = {}
 
-    # ====== Step 1: 获取 JSON 数据 ======
+    # ====== Step 1: VLM 提取时间线 + JSON ======
     if scenario_json:
-        json_data = scenario_json
-        logger.info("Step 1: 使用手工提供的 JSON")
+        vlm_data = scenario_json
     elif video_path:
-        logger.info(f"Step 1: VLM 分析视频 → {video_path}")
-        json_data = analyze_corner_kick(video_path)
-    elif image_path:
-        logger.info(f"Step 1: VLM 分析关键帧 → {image_path}")
-        json_data = analyze_corner_kick_from_frame(image_path)
+        logger.info("Step 1: VLM 分析视频 + 提取时间线...")
+        vlm_data = analyze_corner_kick(video_path)
     else:
-        raise ValueError("必须提供 video_path、image_path 或 scenario_json 之一")
+        raise ValueError("需要 video_path 或 scenario_json")
 
-    result["json_data"] = json_data
-    logger.info(f"Step 1 ✓: JSON 提取完成 ({len(json.dumps(json_data))} chars)")
+    result["vlm_data"] = vlm_data
+    logger.info(f"Step 1 ✓: {len(vlm_data.get('timeline',[]))} 个时间线事件")
 
-    # ====== Step 2: LLM 生成通俗叙事 ======
-    logger.info("Step 2: LLM 生成叙事...")
-    system_prompt, user_prompt = build_corner_kick_prompt(json_data)
+    # ====== Step 2: LLM 按时间线分段生成叙事 ======
+    logger.info("Step 2: LLM 按时间线分段生成叙事...")
+    system_prompt, user_prompt = build_timeline_prompt(vlm_data)
 
-    client = Anthropic(
-        api_key=DEEPSEEK_API_KEY,
-        base_url=DEEPSEEK_BASE_URL,
-        timeout=float(API_TIMEOUT),
-    )
+    client = Anthropic(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL, timeout=float(API_TIMEOUT))
     response = client.messages.create(
-        model=DEEPSEEK_MODEL,
-        max_tokens=MAX_TOKENS,
-        temperature=TEMPERATURE,
+        model=DEEPSEEK_MODEL, max_tokens=MAX_TOKENS, temperature=TEMPERATURE,
         system=system_prompt,
         messages=[{"role": "user", "content": user_prompt}],
     )
 
-    narration_text = '\n\n'.join(
-        b.text for b in response.content if hasattr(b, 'text')
-    )
-    result["narration_text"] = narration_text
-    logger.info(f"Step 2 ✓: 叙事生成完成 ({len(narration_text)} chars)")
+    llm_output = '\n'.join(b.text for b in response.content if hasattr(b, 'text'))
+    segments = parse_timeline_narrative(llm_output)
+    result["segments"] = segments
+    logger.info(f"Step 2 ✓: {len(segments)} 段叙事")
 
-    # ====== Step 3: TTS 配音 ======
-    logger.info("Step 3: TTS 配音...")
-    audio_path = str(OUTPUT_DIR / "narration.mp3")
-    generate_audio(narration_text, audio_path)
-    result["audio_path"] = audio_path
-    logger.info(f"Step 3 ✓: 音频生成完成 → {audio_path}")
+    # ====== Step 3: TTS 逐段配音 + 记录精确时长 ======
+    logger.info("Step 3: TTS 逐段配音 + 精确计时...")
+    segments = generate_timeline_audio(segments, str(OUTPUT_DIR))
+    result["segments"] = segments
+
+    # 合并为完整音频
+    full_audio = str(OUTPUT_DIR / "narration_full.mp3")
+    concat_audio_segments(segments, full_audio)
+    result["full_audio_path"] = full_audio
+
+    total_audio = sum(s["actual_duration_sec"] for s in segments)
+    logger.info(f"Step 3 ✓: {len(segments)} 段音频, 总时长 {total_audio:.1f}s")
 
     # ====== Step 4: 视频合成 ======
-    output_video = str(OUTPUT_DIR / "corner_story.mp4")
-
     if video_path:
-        logger.info("Step 4: 视频合成 (原视频 + 配音 + 字幕)...")
-        create_narrated_video(video_path, audio_path, narration_text, "corner_story.mp4")
+        logger.info("Step 4: 视频合成 (精准时间轴对齐)...")
+        output_video = create_synced_video(video_path, full_audio, segments, "corner_story.mp4")
         result["output_video"] = output_video
-        logger.info(f"Step 4 ✓: 视频合成完成 → {output_video}")
+        logger.info(f"Step 4 ✓: {output_video}")
     else:
-        logger.info("Step 4: 跳过 (无原视频，仅输出音频)")
         result["output_video"] = None
 
     result["elapsed"] = time.time() - t0
-    logger.info(f"全部完成，总耗时 {result['elapsed']:.1f}s")
-
+    logger.info(f"完成! 总耗时 {result['elapsed']:.1f}s")
     return result

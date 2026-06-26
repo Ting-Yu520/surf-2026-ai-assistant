@@ -1,104 +1,84 @@
 """
-VLM 客户端 — Gemini 1.5 Flash
+VLM 客户端 — Gemini 视频分析
 
-功能：从角球视频关键帧中提取结构化战术数据 (JSON)。
-设计原则：输出 Schema 固定，确保 LLM 下游 Prompt 的一致性。
-
-使用方法：
-    from vlm_client import analyze_corner_kick
-    json_data = analyze_corner_kick("path/to/corner.mp4")
+功能：从角球视频中提取结构化战术数据 + 事件时间线
 """
 
 import json
 import time
 from google import genai
 from google.genai import types
-
 from config import GEMINI_API_KEY, GEMINI_MODEL, GEMINI_TIMEOUT
 
-# ============================================================
-# 角球 JSON Schema — VLM 必须遵守的输出格式
-# ============================================================
-CORNER_KICK_SCHEMA = """
+TIMELINE_PROMPT = """Analyze this corner kick video from the 2026 FIFA World Cup.
+
+Your task: extract BOTH the tactical data AND a precise event timeline.
+
+## Output Schema (JSON only, no extra text):
+
 {
   "scenario": "corner_kick",
   "match_context": {
-    "teams": "",
-    "score_at_time": "",
-    "minute": "",
+    "teams": "Team A vs Team B",
+    "score_at_time": "score before this corner",
+    "minute": "match minute",
     "tournament": "2026 FIFA World Cup"
   },
   "corner_setup": {
-    "corner_side": "left / right",
-    "kick_taker_position": {"x": 0-100, "y": 0-100},
-    "kick_taker_foot": "left / right",
-    "players_in_box": { "attacking": int, "defending": int },
-    "formation_visible": "e.g. zonal marking, man-to-man, mixed"
+    "corner_side": "left or right",
+    "players_in_box": {"attacking": N, "defending": N},
+    "kick_taker_foot": "left or right",
+    "formation_visible": "describe defensive setup"
   },
-  "key_action": {
-    "type": "in-swing / out-swing / short_corner / near_post / far_post / direct_shot",
-    "trajectory_description": "describe ball path",
-    "receiving_player_position": {"x": 0-100, "y": 0-100},
-    "defenders_near_ball": int,
-    "shot_attempt": true/false,
-    "goal_scored": true/false
-  },
+  "timeline": [
+    {
+      "start_sec": 0,
+      "end_sec": 3,
+      "phase": "setup",
+      "visual_description": "What is visible on screen: players positioning, referee placing ball, kicker preparing"
+    },
+    {
+      "start_sec": 3,
+      "end_sec": 6,
+      "phase": "delivery",
+      "visual_description": "The kick: ball trajectory, where it's heading, first contact"
+    },
+    {
+      "start_sec": 6,
+      "end_sec": 12,
+      "phase": "action",
+      "visual_description": "What happens with the ball: header, deflection, scramble, shot"
+    },
+    {
+      "start_sec": 12,
+      "end_sec": 18,
+      "phase": "outcome",
+      "visual_description": "Result: goal celebration, save, clearance. Player reactions."
+    }
+  ],
   "tactical_analysis": {
-    "defensive_vulnerability": "describe the gap or error",
-    "attacking_creativity": "describe what made this corner special",
-    "difficulty_score_1_to_10": int,
-    "why_difficult": "numbers / positioning / timing"
+    "key_moment": "what made this corner special",
+    "defensive_error": "what went wrong for defenders",
+    "attacking_success": "what the attackers did right"
   }
 }
-"""
-
-VLM_PROMPT = """Analyze this corner kick video frame(s) from a 2026 FIFA World Cup match.
-
-Your task: extract structured tactical data in JSON format.
-
-Focus on:
-1. How many players are in the penalty box? How are they positioned?
-2. What type of corner is it? (in-swinging, out-swinging, short corner, near post, far post, direct shot)
-3. Where does the ball go? Who receives it?
-4. What is the defensive setup? Is there a gap the attacking team exploited?
-5. Was a shot attempted? Was a goal scored?
-6. Rate the difficulty of this corner kick action (1-10) and explain why.
 
 IMPORTANT:
-- Use approximate coordinates (x,y from 0-100%)
-- If you can't determine something, mark it as "unclear" rather than guessing
-- Output ONLY the JSON, no extra text
-
-Return JSON following this schema:
-""" + CORNER_KICK_SCHEMA
+- Use approximate timestamps (seconds from video start)
+- Each timeline entry should describe what is VISIBLY happening on screen at that moment
+- Keep visual_descriptions concise (1-2 sentences)
+- Output ONLY valid JSON, no markdown code blocks, no extra text
+"""
 
 
 def analyze_corner_kick(video_path: str) -> dict:
-    """
-    使用 Gemini 1.5 Flash 分析角球视频，返回结构化 JSON。
-
-    Args:
-        video_path: 角球视频文件路径（支持 mp4, mov, avi）
-
-    Returns:
-        dict: 结构化角球战术数据
-
-    Raises:
-        ValueError: API Key 未配置
-        RuntimeError: VLM 调用失败
-    """
+    """使用 Gemini 分析角球视频，返回含时间线的结构化 JSON。"""
     if not GEMINI_API_KEY:
-        raise ValueError("GEMINI_API_KEY 未设置。请在 .env 中添加 GEMINI_API_KEY=your-key")
+        raise ValueError("GEMINI_API_KEY 未设置。")
 
     client = genai.Client(api_key=GEMINI_API_KEY)
 
-    # 上传视频
-    video_file = client.files.upload(
-        file=video_path,
-        config=types.UploadFileConfig()
-    )
-
-    # 等待视频处理完成
+    video_file = client.files.upload(file=video_path, config=types.UploadFileConfig())
     while video_file.state == types.FileState.PROCESSING:
         time.sleep(2)
         video_file = client.files.get(name=video_file.name)
@@ -110,78 +90,49 @@ def analyze_corner_kick(video_path: str) -> dict:
         response = client.models.generate_content(
             model=GEMINI_MODEL,
             contents=[
-                types.Content(
-                    role="user",
-                    parts=[
-                        types.Part.from_uri(
-                            file_uri=video_file.uri,
-                            mime_type=video_file.mime_type or "video/mp4"
-                        ),
-                        types.Part(text=VLM_PROMPT)
-                    ]
-                )
+                types.Content(role="user", parts=[
+                    types.Part.from_uri(file_uri=video_file.uri, mime_type="video/mp4"),
+                    types.Part(text=TIMELINE_PROMPT)
+                ])
             ],
-            config=types.GenerateContentConfig(
-                temperature=0.2,  # 低温度 = 更准确的结构化输出
-                max_output_tokens=2048,
-            )
+            config=types.GenerateContentConfig(temperature=0.2, max_output_tokens=4096)
         )
 
-        raw_text = response.text.strip()
-
-        # 清理可能的 markdown 代码块包裹
-        if raw_text.startswith("```"):
-            raw_text = raw_text.split("```")[1]
-            if raw_text.startswith("json"):
-                raw_text = raw_text[4:]
-
-        return json.loads(raw_text)
+        raw = response.text.strip()
+        if raw.startswith("```"):
+            parts = raw.split("```")
+            raw = parts[1]
+            if raw.startswith("json"): raw = raw[4:]
+        return json.loads(raw)
 
     except json.JSONDecodeError as e:
-        raise RuntimeError(f"VLM 返回内容无法解析为 JSON: {e}\n\n返回文本:\n{raw_text[:500]}")
+        raise RuntimeError(f"VLM 返回无效 JSON: {e}")
     except Exception as e:
         raise RuntimeError(f"VLM 调用失败: {e}")
 
 
 def analyze_corner_kick_from_frame(image_path: str) -> dict:
-    """
-    从单张关键帧图片（而非视频）分析角球场景。
-    用于没有完整视频时，用手动截取的关键帧。
-
-    Args:
-        image_path: 关键帧图片路径
-
-    Returns:
-        dict: 结构化角球战术数据
-    """
+    """从单张关键帧图片分析角球场景。"""
     if not GEMINI_API_KEY:
         raise ValueError("GEMINI_API_KEY 未设置。")
 
-    client = genai.Client(api_key=GEMINI_API_KEY)
-
-    # 读取图片
     import PIL.Image
+    client = genai.Client(api_key=GEMINI_API_KEY)
     img = PIL.Image.open(image_path)
 
     try:
         response = client.models.generate_content(
             model=GEMINI_MODEL,
-            contents=[VLM_PROMPT, img],
-            config=types.GenerateContentConfig(
-                temperature=0.2,
-                max_output_tokens=2048,
-            )
+            contents=[TIMELINE_PROMPT, img],
+            config=types.GenerateContentConfig(temperature=0.2, max_output_tokens=4096)
         )
-
-        raw_text = response.text.strip()
-        if raw_text.startswith("```"):
-            raw_text = raw_text.split("```")[1]
-            if raw_text.startswith("json"):
-                raw_text = raw_text[4:]
-
-        return json.loads(raw_text)
-
+        raw = response.text.strip()
+        if raw.startswith("```"):
+            parts = raw.split("```")
+            raw = parts[1]
+            if raw.startswith("json"): raw = raw[4:]
+        return json.loads(raw)
     except json.JSONDecodeError as e:
-        raise RuntimeError(f"VLM 返回内容无法解析为 JSON: {e}")
+        raise RuntimeError(f"VLM 返回无效 JSON: {e}")
     except Exception as e:
         raise RuntimeError(f"VLM 调用失败: {e}")

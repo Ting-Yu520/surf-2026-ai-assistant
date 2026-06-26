@@ -1,69 +1,72 @@
 """
-角球专用 Prompt 约束系统 — SURF-2026 核心 IP
+角球专用 Prompt — 时间线感知版本
 
-5 维约束框架：角色 · 术语 · 类比 · 数据 · 格式
+LLM 按视频时间轴分段生成叙事，每段对应一个视觉事件。
 """
 
-# ============================================================
-# System Prompt — 角球专用
-# ============================================================
-CORNER_KICK_SYSTEM_PROMPT = """你是一个擅长讲故事的足球解说员。你的观众是那些这辈子可能第一次看足球的人——他们不知道角球是什么，也不知道禁区是什么意思。
+TIMELINE_SYSTEM_PROMPT = """你是一个擅长讲故事的足球解说员。你的观众这辈子可能第一次看足球。
 
 核心规则：
-1. 像朋友聊天一样说话。用"你想象一下"、"就好比说"来开场。
-2. 绝对禁止使用足球术语。如果必须提到"角球""禁区""防守站位"，立刻用生活比喻解释。
-   - 比如"角球"→"从球场的角落里把球踢出去"
-   - 比如"禁区"→"球门前那块最危险的区域"
-   - 比如"防守站位"→"防守队员怎么站，就像保安怎么布岗"
-3. 每个角球场景，找到一个最贴切的生活类比——排队被插队、教室门口堵人、地铁到站瞬间——让观众"啊原来如此"。
-4. 只能基于提供给你的 JSON 数据来发挥，不要编造数据里没有的情节。不确定的地方说"可能是"。
-5. 用自然段落说话，不要用 markdown，不要用 emoji 标题。
-6. 特别重要：解释清楚为什么这个角球的结果（进球/不进球）与场上站位有关。让观众明白"原来站哪儿决定了能不能进球"。
+1. 像朋友聊天，用"你想象一下""你看"这类语气。
+2. 绝对禁止足球术语。每个专业概念立刻用生活比喻解释。
+3. 只能基于提供的数据，不确定处说"可能是"。
+4. 用自然的中文段落，不要 markdown，不要 emoji。
 
-7. 最后，用一句话总结这个角球的精华，这句话要短（不超过20个字），有力，适合做短视频标题。"""
+输出格式：
+你会被给定一个事件时间线。对每个事件写 1-2 句话的解说词。
+每段解说词必须精确描述该时间段内画面上正在发生的事情。
+"""
 
+TIMELINE_USER_TEMPLATE = """下面是一个足球角球的完整数据和事件时间线。请为每个时间线事件写 1-2 句解说词。
 
-# ============================================================
-# User Prompt 模板 — 角球专用
-# ============================================================
-CORNER_KICK_USER_TEMPLATE = """下面是一个足球角球场景的战术数据。请把它变成一个让完全不懂足球的人也能听懂、并且觉得有意思的故事。
+## 比赛信息
+{context}
 
-## 角球战术数据
-```json
-{scenario_json}
-```
+## 事件时间线
+{timeline}
 
 ## 要求
-请用 3-4 个自然段落来讲这个故事：
+对时间线中的每个事件，生成一段解说词，以 JSON 数组返回：
 
-第一段：设置场景
-- 这是哪场比赛？比分是多少？比赛进行到什么时候了？
-- 为什么这个时刻很关键？（比分差距、时间紧迫等）
+```json
+[
+  {{
+    "start_sec": <事件开始秒>,
+    "end_sec": <事件结束秒>,
+    "narration": "<1-2句中文解说词，描述这一秒画面上正在发生的事>"
+  }},
+  ...
+]
+```
 
-第二段：解释防守方的布置
-- 防守球员是怎么站的？他们的策略是什么？
-- 用人话解释这个防守策略的优缺点（用比喻）
-
-第三段：解释进攻方做了什么
-- 发球的人选择了什么类型的角球？
-- 球飞向哪里？谁接到了？
-- 为什么这个选择很聪明（或很愚蠢）？
-
-第四段：结果和总结
-- 进球了吗？为什么？
-- 用一句话生活类比总结这个角球
-
-记住：你的读者可能这辈子第一次听说足球。"""
+每段解说词必须：
+- 精确描述该时间段画面上正在发生的事
+- 用生活比喻来解释复杂动作
+- 保持和前后段的连贯性
+- 输出 ONLY JSON 数组，不要其他文字
+"""
 
 
-def build_corner_kick_prompt(scenario_data: dict) -> tuple[str, str]:
-    """
-    构建角球专用 Prompt。
-
-    Returns:
-        (system_prompt, user_prompt)
-    """
+def build_timeline_prompt(vlm_data: dict) -> tuple[str, str]:
+    """从 VLM 输出的含时间线 JSON 构建 LLM prompt。"""
     import json
-    json_str = json.dumps(scenario_data, indent=2, ensure_ascii=False)
-    user_prompt = CORNER_KICK_USER_TEMPLATE.format(scenario_json=json_str)
-    return CORNER_KICK_SYSTEM_PROMPT, user_prompt
+
+    context = json.dumps(vlm_data.get("match_context", {}), indent=2, ensure_ascii=False)
+    context += "\n" + json.dumps(vlm_data.get("corner_setup", {}), indent=2, ensure_ascii=False)
+
+    timeline = vlm_data.get("timeline", [])
+    timeline_str = json.dumps(timeline, indent=2, ensure_ascii=False)
+
+    user_prompt = TIMELINE_USER_TEMPLATE.format(context=context, timeline=timeline_str)
+    return TIMELINE_SYSTEM_PROMPT, user_prompt
+
+
+def parse_timeline_narrative(llm_output: str) -> list[dict]:
+    """解析 LLM 返回的分段叙事 JSON。"""
+    import json
+    raw = llm_output.strip()
+    if raw.startswith("```"):
+        parts = raw.split("```")
+        raw = parts[1]
+        if raw.startswith("json"): raw = raw[4:]
+    return json.loads(raw)
