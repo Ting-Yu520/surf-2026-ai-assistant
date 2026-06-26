@@ -1,0 +1,145 @@
+{
+  "dataset": "2026 FIFA World Cup Corner Kicks",
+  "version": "1.0",
+  "last_updated": "2026-06-26",
+  "description": "Real corner kick events from the 2026 FIFA World Cup (June 11 – July 19, 2026). Each entry includes match metadata, video source URLs, and tactical notes for VLM extraction + LLM narrative generation.",
+  "total_entries": 8,
+  "entries": [
+    {
+      "id": "wc2026-corner-001",
+      "match": "Netherlands vs Tunisia",
+      "group": "Group F",
+      "date": "2026-06-26",
+      "minute": "61",
+      "score_at_time": "Netherlands 2-1 Tunisia",
+      "corner_type": "in-swinging_right",
+      "kick_taker": "Tijjani Reijnders",
+      "goal_scorer": "Jan Paul van Hecke",
+      "goal_type": "header_near_post",
+      "result": "goal",
+      "video_urls": [
+        "https://www.fox.com/watch/clip/fmc-6ft6ov5up6kdrfjy/netherlands-jan-paul-van-hecke-scores-header-off-corner-vs-tunisia-2026-fifa-world-cup",
+        "https://www.fox.com/watch/clip/fmc-iwqtyj5zv6zcs0ep/netherlands-extends-lead-with-a-header-from-a-corner-kick"
+      ],
+      "tactical_note": "Near-post header from right-side corner. Van Hecke lost his marker with a quick step-back then burst forward. Clean header off the crossbar and in."
+    },
+    {
+      "id": "wc2026-corner-002",
+      "match": "Netherlands vs Tunisia",
+      "group": "Group F",
+      "date": "2026-06-26",
+      "minute": "54",
+      "score_at_time": "Netherlands 2-0 Tunisia",
+      "corner_type": "in-swinging_left",
+      "kick_taker": "Hannibal Mejbri",
+      "goal_scorer": "Mastouri",
+      "goal_type": "header_penalty_spot",
+      "result": "goal",
+      "video_urls": [],
+      "tactical_note": "Corner delivered to penalty spot area. Mastouri rose between defenders to head home. Tunisia's consolation goal."
+    },
+    {
+      "id": "wc2026-corner-003",
+      "match": "USA vs Türkiye",
+      "group": "Group D",
+      "date": "2026-06-26",
+      "minute": "3",
+      "score_at_time": "USA 0-0 Türkiye",
+      "corner_type": "scramble",
+      "kick_taker": "unknown",
+      "goal_scorer": "Auston Trusty",
+      "goal_type": "scramble_finish",
+      "result": "goal",
+      "video_urls": [
+        "https://www.fox.com/watch/clip/fmc-lv4amjb31pj9smac/auston-trusty-scores-from-corner-to-put-united-states-ahead-of-t-rkiye-2026-fifa-world-cup"
+      ],
+      "tactical_note": "Early goal from a corner scramble. Ball bounced around in the box after the corner delivery, Trusty reacted first to poke it home. His first USMNT goal."
+    },
+    {
+      "id": "wc2026-corner-004",
+      "match": "Algeria vs Jordan",
+      "group": "Group J",
+      "date": "2026-06-24",
+      "minute": "69",
+      "score_at_time": "Algeria 0-1 Jordan",
+      "corner_type": "in-swinging_right",
+      "kick_taker": "Riyad Mahrez",
+      "goal_scorer": "Nadhir Benbouali",
+      "goal_type": "header_center",
+      "result": "goal",
+      "video_urls": [],
+      "tactical_note": "Mahrez delivers from right corner. Benbouali rises highest in the center of the box. Powerful header equalizer. Algeria's first goal of the match."
+    },
+    {
+      "id": "wc2026-corner-005",
+      "match": "Algeria vs Jordan",
+      "group": "Group J",
+      "date": "2026-06-24",
+      "minute": "82",
+      "score_at_time": "Algeria 1-1 Jordan",
+      "corner_type": "deflected",
+      "kick_taker": "Riyad Mahrez",
+      "goal_scorer": "Amine Gouiri",
+      "goal_type": "rebound_finish",
+      "result": "goal",
+      "video_urls": [],
+      "tactical_note": "Another Mahrez corner, deflected in the box. Gouiri reacted quickest to the loose ball, slotting home from close range. Algeria's first WC win after conceding first since 2014."
+    },
+    {
+      "id": "wc2026-corner-006",
+      "match": "DR Congo vs Portugal",
+      "group": "Group K",
+      "date": "2026-06-17",
+      "minute": "45+5",
+      "score_at_time": "DR Congo 0-1 Portugal",
+      "corner_type": "short_corner",
+      "kick_taker": "Masuaku",
+      "goal_scorer": "Yoane Wissa",
+      "goal_type": "header_from_short",
+      "result": "goal",
+      "video_urls": [],
+      "tactical_note": "Short corner routine: Masuaku played a quick 1-2, created an overload on the flank, crossed to Wissa unmarked. DR Congo's first World Cup goal in 52 years."
+    },
+    {
+      "id": "wc2026-corner-007",
+      "match": "Morocco vs Haiti",
+      "group": "Group C",
+      "date": "2026-06-25",
+      "minute": "78",
+      "score_at_time": "unknown",
+      "corner_type": "short_corner",
+      "kick_taker": "unknown",
+      "goal_scorer": "Rahimi",
+      "goal_type": "turn_and_shot",
+      "result": "goal",
+      "video_urls": [
+        "http://big5.cctv.com/gate/big5/sports.cctv.com/2026/06/25/VIDExjrnA3H8FnJOd6UCsD24260625.shtml"
+      ],
+      "tactical_note": "Short corner routine. Rahimi received the ball from the corner, turned and shot in one motion. Smart set piece variation."
+    },
+    {
+      "id": "wc2026-corner-008",
+      "match": "Portugal vs Uzbekistan",
+      "group": "Group K",
+      "date": "2026-06-23",
+      "minute": "59",
+      "score_at_time": "Portugal 3-0 Uzbekistan",
+      "corner_type": "in-swinging",
+      "kick_taker": "unknown",
+      "goal_scorer": "Cristiano Ronaldo",
+      "goal_type": "tap_in",
+      "result": "goal",
+      "video_urls": [
+        "https://www.fox.com/watch/clip/fmc-c0z89q7kuu195r63/cristiano-ronaldo-taps-in-a-goal-to-extend-portugal-s-lead"
+      ],
+      "tactical_note": "Corner swung in, headed toward goal, Ronaldo positioned perfectly at the far post for a simple tap-in. Classic poacher's goal from a set piece."
+    }
+  ],
+  "tournament_status": "Ongoing — Group Stage (June 11-26). Knockout stage begins June 28. More corner kick data will be added as tournament progresses.",
+  "video_sources": {
+    "fox_sports": "https://www.fox.com/watch/clip/... (US-only, may need VPN)",
+    "cctv": "http://sports.cctv.com/... (China, free)",
+    "bein_sports": "https://www.beinsports.com/... (international)",
+    "fifa_youtube": "https://www.youtube.com/@FIFA (official highlights, global)"
+  }
+}
