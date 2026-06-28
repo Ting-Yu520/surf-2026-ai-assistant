@@ -1,11 +1,28 @@
 {
   "dataset": "2026 FIFA World Cup Corner Kicks",
   "version": "2.0",
-  "last_updated": "2026-06-26",
+  "last_updated": "2026-06-28",
   "description": "Real corner kick events from the 2026 FIFA World Cup (June 11 – July 19, 2026). Each entry includes match metadata, video source URLs, and tactical notes for VLM extraction + LLM narrative generation. v2.0: Full catch-up of all group stage corner goals (June 11-26).",
-  "total_entries": 16,
-  "collection_status": "Full catch-up completed for Group Stage (June 11-26). Daily batch collection active from June 27.",
+  "total_entries": 17,
+  "collection_status": "Group Stage + Day 15 (June 27) catch-up. Daily batch collection active.",
   "entries": [
+    {
+      "id": "wc2026-corner-017",
+      "match": "Belgium vs New Zealand",
+      "group": "Group G",
+      "date": "2026-06-27",
+      "minute": "unknown",
+      "score_at_time": "Belgium 1-0 New Zealand",
+      "corner_type": "in-swinging",
+      "kick_taker": "Kevin De Bruyne",
+      "goal_scorer": "Leandro Trossard",
+      "goal_type": "scramble_finish",
+      "result": "goal",
+      "video_urls": [
+        "https://sports.cctv.com/2026/06/27/VIDETz26JoP2QVJH7WqQzsWb260627.shtml"
+      ],
+      "tactical_note": "De Bruyne whipped in a dangerous corner that created chaos in the box. Trossard reacted quickest to a loose ball and swept it home. Belgium went on to win 5-1."
+    },
     {
       "id": "wc2026-corner-001",
       "match": "Netherlands vs Tunisia",
