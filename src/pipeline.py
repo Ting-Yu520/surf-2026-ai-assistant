@@ -12,6 +12,7 @@ from config import (
     API_TIMEOUT, MAX_TOKENS, TEMPERATURE, OUTPUT_DIR,
 )
 from tts_client import generate_audio
+from prompts.corner_kick import DUO_SYSTEM_PROMPT, DUO_USER_TEMPLATE
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -24,7 +25,6 @@ def process_corner_kick(
     output_prefix: str = "",
 ) -> dict:
     """处理角球视频——二人转科普版本。"""
-    from prompts.corner_kick import DUO_SYSTEM_PROMPT, DUO_USER_TEMPLATE
 
     t0 = time.time()
     result = {}

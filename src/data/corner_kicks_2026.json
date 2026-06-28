@@ -21,7 +21,8 @@
       "video_urls": [
         "https://sports.cctv.com/2026/06/27/VIDETz26JoP2QVJH7WqQzsWb260627.shtml"
       ],
-      "tactical_note": "De Bruyne whipped in a dangerous corner that created chaos in the box. Trossard reacted quickest to a loose ball and swept it home. Belgium went on to win 5-1."
+      "tactical_note": "De Bruyne whipped in a dangerous corner that created chaos in the box. Trossard reacted quickest to a loose ball and swept it home. Belgium went on to win 5-1.",
+      "local_video_path": "D:\\ClaudeWorkspace\\projects\\surf-2026-ai-tactical-assistant\\data\\videos\\wc2026-corner-017.mp4"
     },
     {
       "id": "wc2026-corner-001",

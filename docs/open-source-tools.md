@@ -7,12 +7,13 @@
 
 ## 已发表论文的开源项目（高优先级）
 
-| 项目 | 作者/机构 | 发表 | GitHub | 用途 |
-|------|---------|------|--------|------|
-| **SoccerMaster** | Haolin Yang (SJTU) | CVPR 2026 Oral | [haolinyang-hlyang/SoccerMaster](https://github.com/haolinyang-hlyang/SoccerMaster) | 足球视觉基础模型：球员检测、场地注册、事件分类、视觉-语言对齐 |
-| **UniSoccer** | Jiayuan Rao (SJTU) | CVPR 2025 | [jyrao/UniSoccer](https://github.com/jyrao/UniSoccer) | 统一足球视频理解框架 |
-| **SoccerAgent** | Jiayuan Rao (SJTU) | ACM MM 2025 | [jyrao/SoccerAgent](https://github.com/jyrao/SoccerAgent) | 多智能体足球问答系统 |
-| **MatchTime** | Jiayuan Rao (SJTU) | EMNLP 2024 Oral | [jyrao/MatchTime](https://github.com/jyrao/MatchTime) | 自动足球解说生成 |
+| 项目 | 作者/机构 | 发表 | GitHub | 用途 | 可用代码 |
+|------|---------|------|--------|------|---------|
+| **TacticAI Recreation** | Mattr-TA95 | 社区版 | [mattr-ta95/tactic-ai-recreation](https://github.com/mattr-ta95/tactic-ai-recreation) | 角球战术预测与分析，含 API、可视化面板 | ✅ `src/` `data/` `configs/` `scripts/` |
+| **SoccerMaster** | Haolin Yang (SJTU) | CVPR 2026 Oral | [haolinyang-hlyang/SoccerMaster](https://github.com/haolinyang-hlyang/SoccerMaster) | 足球视觉基础模型：球员检测、场地注册、事件分类 | ✅ `codes/`（代码）❌ 模型未发布 |
+| **SoccerAgent** | Jiayuan Rao (SJTU) | ACM MM 2025 | [jyrao/SoccerAgent](https://github.com/jyrao/SoccerAgent) | 多智能体足球问答系统 | ✅ 完整代码+数据库 |
+| **MatchTime** | Jiayuan Rao (SJTU) | EMNLP 2024 Oral | [jyrao/MatchTime](https://github.com/jyrao/MatchTime) | 自动足球解说生成 | ✅ 完整代码+模型 |
+| **UniSoccer** | Jiayuan Rao (SJTU) | CVPR 2025 | [jyrao/UniSoccer](https://github.com/jyrao/UniSoccer) | 统一足球视频理解 | ✅ `web/` 主分支 |
 
 ## SoccerNet 官方工具系列
 
