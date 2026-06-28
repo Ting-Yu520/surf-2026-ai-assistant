@@ -21,7 +21,10 @@
       "video_urls": [
         "https://sports.cctv.cn/2026/06/26/VIDE0Nor5pTvJsRmfW30yugU260626.shtml"
       ],
-      "tactical_note": "Near-post header from right-side corner. Van Hecke lost his marker with a quick step-back then burst forward. Clean header off the crossbar and in."
+      "tactical_note": "Near-post header from right-side corner. Van Hecke lost his marker with a quick step-back then burst forward. Clean header off the crossbar and in.",
+      "local_video_height": 720,
+      "local_video_path": "data/videos/wc2026-corner-001.mp4",
+      "video_quality": "720p"
     },
     {
       "id": "wc2026-corner-002",
@@ -38,7 +41,10 @@
       "video_urls": [
         "https://sports.cctv.cn/2026/06/26/VIDE6x0U7LD1oJB23m4aBGNw260626.shtml"
       ],
-      "tactical_note": "Corner delivered to penalty spot area. Mastouri rose between defenders to head home. Tunisia's consolation goal."
+      "tactical_note": "Corner delivered to penalty spot area. Mastouri rose between defenders to head home. Tunisia's consolation goal.",
+      "local_video_height": 720,
+      "local_video_path": "data/videos/wc2026-corner-002.mp4",
+      "video_quality": "720p"
     },
     {
       "id": "wc2026-corner-003",
@@ -55,7 +61,10 @@
       "video_urls": [
         "https://sports.cctv.com/2026/06/26/VIDEir1PFDQkAuldDjgscuXs260626.shtml"
       ],
-      "tactical_note": "Early goal from a corner scramble. Ball bounced around in the box after the corner delivery, Trusty reacted first to poke it home. His first USMNT goal."
+      "tactical_note": "Early goal from a corner scramble. Ball bounced around in the box after the corner delivery, Trusty reacted first to poke it home. His first USMNT goal.",
+      "local_video_height": 720,
+      "local_video_path": "data/videos/wc2026-corner-003.mp4",
+      "video_quality": "720p"
     },
     {
       "id": "wc2026-corner-004",
@@ -70,10 +79,13 @@
       "goal_type": "header_center",
       "result": "goal",
       "video_urls": [
-        "http://pc.dongqiudi.com/articles/5959581.html",
-        "http://www.ppsport.com/article/news/2561086.html"
+        "https://sports.cctv.com/2026/06/23/VIDEzWwy5WfL6FTI4Bqc5l63260623.shtml",
+        "https://sports.cctv.com/2026/06/23/VIDEqHHAx4GoQH6bo5Be2pWx260623.shtml"
       ],
-      "tactical_note": "Mahrez delivers from right corner. Benbouali rises highest in the center of the box. Powerful header equalizer. Algeria's first goal of the match."
+      "tactical_note": "Mahrez delivers from right corner. Benbouali rises highest in the center of the box. Powerful header equalizer. Algeria's first goal of the match.",
+      "local_video_path": "data/videos/wc2026-corner-004.mp4",
+      "local_video_height": 720,
+      "video_quality": "720p"
     },
     {
       "id": "wc2026-corner-005",
@@ -88,10 +100,13 @@
       "goal_type": "rebound_finish",
       "result": "goal",
       "video_urls": [
-        "http://pc.dongqiudi.com/articles/5959581.html",
-        "http://www.ppsport.com/article/news/2561086.html"
+        "https://sports.cctv.com/2026/06/23/VIDElS830vbniE7UXBGh62GK260623.shtml",
+        "https://sports.cctv.com/2026/06/23/VIDEqHHAx4GoQH6bo5Be2pWx260623.shtml"
       ],
-      "tactical_note": "Hadj Moussa corner, Bensebaini header blocked, Gouiri reacted quickest to flick the loose ball past goalkeeper. VAR confirmed. Algeria's first WC win after conceding first since 2014."
+      "tactical_note": "Hadj Moussa corner, Bensebaini header blocked, Gouiri reacted quickest to flick the loose ball past goalkeeper. VAR confirmed. Algeria's first WC win after conceding first since 2014.",
+      "local_video_path": "data/videos/wc2026-corner-005.mp4",
+      "local_video_height": 720,
+      "video_quality": "720p"
     },
     {
       "id": "wc2026-corner-006",
@@ -106,9 +121,12 @@
       "goal_type": "header_from_short",
       "result": "goal",
       "video_urls": [
-        "https://k.sina.cn/article_5262898489_m139b175390330139l8.html"
+        "https://sports.cctv.com/2026/06/18/VIDE6Vm2SJsk8Lt15O50C8e7260618.shtml"
       ],
-      "tactical_note": "Short corner routine: Masuaku played a quick 1-2, created an overload on the flank, crossed to Wissa unmarked. DR Congo's first World Cup goal in 52 years."
+      "tactical_note": "Short corner routine: Masuaku played a quick 1-2, created an overload on the flank, crossed to Wissa unmarked. DR Congo's first World Cup goal in 52 years.",
+      "local_video_path": "data/videos/wc2026-corner-006.mp4",
+      "local_video_height": 720,
+      "video_quality": "720p"
     },
     {
       "id": "wc2026-corner-007",
@@ -125,7 +143,10 @@
       "video_urls": [
         "http://big5.cctv.com/gate/big5/sports.cctv.com/2026/06/25/VIDExjrnA3H8FnJOd6UCsD24260625.shtml"
       ],
-      "tactical_note": "Short corner routine. Rahimi received the ball from the corner, turned and shot in one motion. Smart set piece variation."
+      "tactical_note": "Short corner routine. Rahimi received the ball from the corner, turned and shot in one motion. Smart set piece variation.",
+      "local_video_height": 720,
+      "local_video_path": "data/videos/wc2026-corner-007.mp4",
+      "video_quality": "720p"
     },
     {
       "id": "wc2026-corner-008",
@@ -140,9 +161,13 @@
       "goal_type": "tap_in",
       "result": "goal",
       "video_urls": [
-        "http://pc.dongqiudi.com/articles/5959581.html"
+        "https://sports.cctv.com/2026/06/24/VIDEEBXEr1YvCXNLIAm5vEGf260624.shtml",
+        "https://sports.cctv.com/2026/06/24/VIDEoVqE06rUeWCf2yFPpyoZ260624.shtml"
       ],
-      "tactical_note": "Corner swung in, headed toward goal, Ronaldo positioned perfectly at the far post for a simple tap-in. Classic poacher's goal from a set piece."
+      "tactical_note": "Corner swung in, headed toward goal, Ronaldo positioned perfectly at the far post for a simple tap-in. Classic poacher's goal from a set piece.",
+      "local_video_path": "data/videos/wc2026-corner-008.mp4",
+      "local_video_height": 720,
+      "video_quality": "720p"
     },
     {
       "id": "wc2026-corner-009",
@@ -157,9 +182,13 @@
       "goal_type": "deflected_header",
       "result": "goal",
       "video_urls": [
-        "https://www.bilibili.com/video/BV1azJT6tEpC/"
+        "https://sports.cctv.com/2026/06/15/VIDE2Lkk19of471e6tqYmYe2260615.shtml",
+        "https://sports.cctv.com/2026/06/15/VIDEcUZxccnoP1SvlbSgcUkb260615.shtml"
       ],
-      "tactical_note": "Junya Ito corner found substitute Koki Ogawa, who outjumped Van Dijk at the near post. Ogawa's header glanced off Daichi Kamada and past Verbruggen. Late drama — Japan equalized despite massive height disadvantage against the Dutch defense."
+      "tactical_note": "Junya Ito corner found substitute Koki Ogawa, who outjumped Van Dijk at the near post. Ogawa's header glanced off Daichi Kamada and past Verbruggen. Late drama — Japan equalized despite massive height disadvantage against the Dutch defense.",
+      "local_video_path": "data/videos/wc2026-corner-009.mp4",
+      "local_video_height": 720,
+      "video_quality": "720p"
     },
     {
       "id": "wc2026-corner-010",
@@ -174,9 +203,12 @@
       "goal_type": "rebound_finish",
       "result": "goal",
       "video_urls": [
-        "https://k.sina.cn/article_7879923920_m1d5ae18d003301e43m.html"
+        "https://sports.cctv.com/2026/06/16/VIDExuDUwXEDCrgrl79eDBV0260616.shtml"
       ],
-      "tactical_note": "Al-Juwayr corner, Hassan Al Tambakti powered a bullet header that Muslera could only parry (ball also hit the post). Abdulelah Al Amri reacted quickest to bundle the rebound over the line. First time Saudi Arabia scored the opening goal in a World Cup match since 1994."
+      "tactical_note": "Al-Juwayr corner, Hassan Al Tambakti powered a bullet header that Muslera could only parry (ball also hit the post). Abdulelah Al Amri reacted quickest to bundle the rebound over the line. First time Saudi Arabia scored the opening goal in a World Cup match since 1994.",
+      "local_video_path": "data/videos/wc2026-corner-010.mp4",
+      "local_video_height": 720,
+      "video_quality": "720p"
     },
     {
       "id": "wc2026-corner-011",
@@ -193,7 +225,10 @@
       "video_urls": [
         "https://sports.cctv.cn/2026/06/17/VIDEw1WR81ynVySo9ODq5Vvv260617.shtml"
       ],
-      "tactical_note": "Substitute Østigård scored with his first touch of the game — just 3 minutes after coming on. Ødegaard delivered a precise right-side corner, Østigård rose above four Iraqi defenders to power a header into the far corner. First Serie A player to score at the 2026 World Cup."
+      "tactical_note": "Substitute Østigård scored with his first touch of the game — just 3 minutes after coming on. Ødegaard delivered a precise right-side corner, Østigård rose above four Iraqi defenders to power a header into the far corner. First Serie A player to score at the 2026 World Cup.",
+      "local_video_height": 720,
+      "local_video_path": "data/videos/wc2026-corner-011.mp4",
+      "video_quality": "720p"
     },
     {
       "id": "wc2026-corner-012",
@@ -210,7 +245,10 @@
       "video_urls": [
         "https://sports.cctv.com/2026/06/18/VIDEH1ioKrHBzubU1hjKCBAU260618.shtml"
       ],
-      "tactical_note": "Declan Rice delivered a precise corner into the box. Croatia defenders were caught napping — Harry Kane was left completely unmarked for a free header from close range. Kane's 10th World Cup goal, tying Gary Lineker's England record."
+      "tactical_note": "Declan Rice delivered a precise corner into the box. Croatia defenders were caught napping — Harry Kane was left completely unmarked for a free header from close range. Kane's 10th World Cup goal, tying Gary Lineker's England record.",
+      "local_video_height": 720,
+      "local_video_path": "data/videos/wc2026-corner-012.mp4",
+      "video_quality": "720p"
     },
     {
       "id": "wc2026-corner-013",
@@ -227,7 +265,10 @@
       "video_urls": [
         "https://sports.cctv.cn/2026/06/22/VIDE8ShnYhEdzkFLu5MnXB9p260622.shtml"
       ],
-      "tactical_note": "Tim Payne corner from the right, Finn Surman rose highest to power a header past goalkeeper Mostafa Shobeir. New Zealand's shock early lead against the run of expectations. Surman's first World Cup goal."
+      "tactical_note": "Tim Payne corner from the right, Finn Surman rose highest to power a header past goalkeeper Mostafa Shobeir. New Zealand's shock early lead against the run of expectations. Surman's first World Cup goal.",
+      "local_video_height": 720,
+      "local_video_path": "data/videos/wc2026-corner-013.mp4",
+      "video_quality": "720p"
     },
     {
       "id": "wc2026-corner-014",
@@ -244,7 +285,10 @@
       "video_urls": [
         "https://sports.cctv.cn/2026/06/22/VIDEiyRFjt1GPaSZHonSz72F260622.shtml"
       ],
-      "tactical_note": "Salah delivered a left-sided corner, substitute Trézéguet made a diving header to seal Egypt's historic first-ever World Cup victory. Egypt became only the second African nation since 1966 to score two headed goals in a single World Cup match."
+      "tactical_note": "Salah delivered a left-sided corner, substitute Trézéguet made a diving header to seal Egypt's historic first-ever World Cup victory. Egypt became only the second African nation since 1966 to score two headed goals in a single World Cup match.",
+      "local_video_height": 720,
+      "local_video_path": "data/videos/wc2026-corner-014.mp4",
+      "video_quality": "720p"
     },
     {
       "id": "wc2026-corner-015",
@@ -259,10 +303,13 @@
       "goal_type": "scramble_finish",
       "result": "goal",
       "video_urls": [
-        "https://www.panshisfj.com/news/311837.html",
-        "https://www.qiumiwu.com/video/1966246545999"
+        "https://sports.cctv.com/2026/06/26/VIDEHq214NFIPSsaDcc7hqTm260626.shtml",
+        "https://sports.cctv.com/2026/06/26/ARTI4PHlbGzvWs6s4ldKfHkQ260626.shtml"
       ],
-      "tactical_note": "Moises Caicedo right-sided corner, substitute Kevin Rodriguez flicked it on with a header across goal. Gonzalo Plata reacted quickest, poking the bouncing ball over a diving Manuel Neuer into the roof of the net. Ecuador manager Beccacece jumped into the stands to celebrate — the goal sent Ecuador through to the Round of 32."
+      "tactical_note": "Moises Caicedo right-sided corner, substitute Kevin Rodriguez flicked it on with a header across goal. Gonzalo Plata reacted quickest, poking the bouncing ball over a diving Manuel Neuer into the roof of the net. Ecuador manager Beccacece jumped into the stands to celebrate — the goal sent Ecuador through to the Round of 32.",
+      "local_video_path": "data/videos/wc2026-corner-015.mp4",
+      "local_video_height": 720,
+      "video_quality": "720p"
     },
     {
       "id": "wc2026-corner-016",
@@ -277,16 +324,27 @@
       "goal_type": "own_goal_deflection",
       "result": "own_goal",
       "video_urls": [
-        "https://k.sina.cn/article_5262898489_m139b175390330139e0.html"
+        "https://sports.cctv.com/2026/06/17/VIDEpHpJ2NaEqLCT76bXiXID260617.shtml",
+        "https://sports.cctv.com/2026/06/17/VIDE1q84c5HegaBA27FNtDUl260617.shtml"
       ],
-      "tactical_note": "Sabitzer whipped in a corner aimed for Arnautović. Jordan defender Yazan Al-Arab, tightly marking Arnautović, saw the ball deflect off his back and into his own net. Minutes earlier Austria had a corner goal disallowed by VAR for handball — this one stood. Austria's first World Cup win in 36 years."
+      "tactical_note": "Sabitzer whipped in a corner aimed for Arnautović. Jordan defender Yazan Al-Arab, tightly marking Arnautović, saw the ball deflect off his back and into his own net. Minutes earlier Austria had a corner goal disallowed by VAR for handball — this one stood. Austria's first World Cup win in 36 years.",
+      "local_video_path": "data/videos/wc2026-corner-016.mp4",
+      "local_video_height": 720,
+      "video_quality": "720p"
     }
   ],
   "tournament_status": "Group Stage completed (June 11-26). Knockout stage begins June 28 (Round of 32). Daily batch collection active for all remaining matches through July 19 final.",
   "video_sources": {
-    "primary": "CCTV Sports (sports.cctv.cn / sports.cctv.com) — free, China-accessible, 1080p",
-    "secondary": "Bilibili (bilibili.com) — free, China-accessible, fan-uploaded highlights",
-    "tertiary": "Sina Sports (k.sina.cn) — free, China-accessible, short clips",
-    "backup": "Dongqiudi (dongqiudi.com), PPSport (ppsport.com), Qiumiwu (qiumiwu.com) — free, full replays"
+    "primary": "CCTV 体育 (sports.cctv.cn / sports.cctv.com) — 免费，国内访问，1080P 超清 / 流畅 480P（HLS）",
+    "secondary": "Bilibili (bilibili.com) — 用户已登录（cookies）后可用，1080P+ 原画",
+    "download_strategy": "仅保留 CCTV + B站；优先 CCTV，超分升频至 ≥720P"
+  },
+  "youtube_bilibili_cookie_setup": {
+    "status": "未配置",
+    "options": {
+      "1_chrome_browser": "Chrome 登录 bilibili.com 后，运行 --use-browser-cookies 自动提取（最快）",
+      "2_cookies_file": "导出 bilibili_cookies.txt (Netscape 格式) 放到 scripts/ 目录下",
+      "3_skip": "跳过 B站，全部用 CCTV（已支持 ≥720P 升频）"
+    }
   }
 }

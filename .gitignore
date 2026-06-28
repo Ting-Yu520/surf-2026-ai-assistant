@@ -31,6 +31,9 @@ outputs/videos/
 outputs/audio/
 outputs/texts/
 
+# Local skills (project-specific)
+skills/
+
 # Data (large files, rebuildable)
 data/videos/*.mp4
 

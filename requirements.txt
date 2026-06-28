@@ -15,6 +15,9 @@ edge-tts>=6.1.0
 # Video Processing
 moviepy>=2.0.0
 
+# Video Downloading (corner kick dataset)
+yt-dlp>=2025.1.0
+
 # Data & Validation
 pydantic>=2.7.0
 jsonschema>=4.22.0
