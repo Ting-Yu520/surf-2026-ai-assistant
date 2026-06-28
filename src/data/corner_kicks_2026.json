@@ -3,9 +3,89 @@
   "version": "2.0",
   "last_updated": "2026-06-28",
   "description": "Real corner kick events from the 2026 FIFA World Cup (June 11 – July 19, 2026). Each entry includes match metadata, video source URLs, and tactical notes for VLM extraction + LLM narrative generation. v2.0: Full catch-up of all group stage corner goals (June 11-26).",
-  "total_entries": 17,
+  "total_entries": 21,
   "collection_status": "Group Stage + Day 15 (June 27) catch-up. Daily batch collection active.",
   "entries": [
+    {
+      "id": "wc2026-corner-021",
+      "match": "Croatia vs Ghana",
+      "group": "Group L",
+      "date": "2026-06-28",
+      "minute": "unknown",
+      "score_at_time": "Croatia 1-0 Ghana",
+      "corner_type": "in-swinging",
+      "kick_taker": "Luka Modrić",
+      "goal_scorer": "Nikola Vlašić",
+      "goal_type": "header_center",
+      "result": "goal",
+      "video_urls": [
+        "https://sports.cctv.com/2026/06/28/VIDEUgri8VpDcD92Ozz4TXzH260628.shtml"
+      ],
+      "tactical_note": "Modrić delivered a trademark precise corner to the center of the box. Vlašić timed his run perfectly and directed a powerful header past the Ghanaian goalkeeper.",
+      "local_video_path": "data/videos/wc2026-corner-021.mp4",
+      "local_video_height": 720,
+      "video_quality": "720p"
+    },
+    {
+      "id": "wc2026-corner-020",
+      "match": "Senegal vs Iraq",
+      "group": "Group I",
+      "date": "2026-06-27",
+      "minute": "unknown",
+      "score_at_time": "Senegal 1-0 Iraq",
+      "corner_type": "in-swinging",
+      "kick_taker": "unknown",
+      "goal_scorer": "Sèck",
+      "goal_type": "header_back_post",
+      "result": "goal",
+      "video_urls": [
+        "https://sports.cctv.com/2026/06/27/VIDEjY5AWqA4K5qLv4kaPwpd260627.shtml"
+      ],
+      "tactical_note": "Sèck rose highest at the back post to head home from a corner, setting Senegal on their way to a dominant 5-0 victory.",
+      "local_video_path": "data/videos/wc2026-corner-020.mp4",
+      "local_video_height": 720,
+      "video_quality": "720p"
+    },
+    {
+      "id": "wc2026-corner-019",
+      "match": "Switzerland vs Bosnia",
+      "group": "Group B",
+      "date": "2026-06-19",
+      "minute": "unknown",
+      "score_at_time": "Switzerland 4-1 Bosnia",
+      "corner_type": "second_phase",
+      "kick_taker": "unknown",
+      "goal_scorer": "Mahamić",
+      "goal_type": "volley_from_corner",
+      "result": "goal",
+      "video_urls": [
+        "https://sports.cctv.com/2026/06/19/VIDEwLT7LodWK4yFxDLIGxEH260619.shtml"
+      ],
+      "tactical_note": "Corner kick cleared, but Bosnia recycled possession. Mahamić unleashed a powerful volley from the edge of the box — unstoppable strike that found the top corner.",
+      "local_video_path": "data/videos/wc2026-corner-019.mp4",
+      "local_video_height": 720,
+      "video_quality": "720p"
+    },
+    {
+      "id": "wc2026-corner-018",
+      "match": "Bosnia vs Canada",
+      "group": "Group B",
+      "date": "2026-06-13",
+      "minute": "unknown",
+      "score_at_time": "Bosnia 1-0 Canada",
+      "corner_type": "in-swinging",
+      "kick_taker": "unknown",
+      "goal_scorer": "Lukić",
+      "goal_type": "header_from_corner",
+      "result": "goal",
+      "video_urls": [
+        "https://sports.cctv.com/2026/06/13/VIDEXBIY4gladbByv85YSSA0260613.shtml"
+      ],
+      "tactical_note": "Bosnia's debut goal in their first-ever World Cup match. Corner kick delivered, Lukić powered a header past the Canadian goalkeeper to put Bosnia ahead.",
+      "local_video_path": "data/videos/wc2026-corner-018.mp4",
+      "local_video_height": 720,
+      "video_quality": "720p"
+    },
     {
       "id": "wc2026-corner-017",
       "match": "Belgium vs New Zealand",
@@ -22,7 +102,9 @@
         "https://sports.cctv.com/2026/06/27/VIDETz26JoP2QVJH7WqQzsWb260627.shtml"
       ],
       "tactical_note": "De Bruyne whipped in a dangerous corner that created chaos in the box. Trossard reacted quickest to a loose ball and swept it home. Belgium went on to win 5-1.",
-      "local_video_path": "D:\\ClaudeWorkspace\\projects\\surf-2026-ai-tactical-assistant\\data\\videos\\wc2026-corner-017.mp4"
+      "local_video_path": "data/videos/wc2026-corner-017.mp4",
+      "local_video_height": 720,
+      "video_quality": "720p"
     },
     {
       "id": "wc2026-corner-001",
