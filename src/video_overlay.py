@@ -228,6 +228,61 @@ def _create_opening_clip(video_path: str, output_dir: Path) -> Optional[str]:
     return str(opening_path) if opening_path.exists() else None
 
 
+def _add_segment_overlays(input_clip: str, seg: dict, output_path: str, font_rel: str):
+    """给单个段 clip 叠加：角标、边框、高亮圈、字幕"""
+    color = "red" if seg["speaker"] == "A" else "blue"
+    label = "懂哥" if seg["speaker"] == "A" else "小白"
+    marker = "●" if seg["speaker"] == "A" else "○"
+    text = seg.get("text", "")[:30]  # 截断长文本
+
+    label_file = _filter_path(_write_textfile(f"{marker} {label}"))
+    subtitle_file = _filter_path(_write_textfile(text))
+
+    filters = []
+
+    # 四边彩色边框
+    filters.append(f"drawbox=x=0:y=0:w=1280:h=4:color={color}@0.8:t=fill")
+    filters.append(f"drawbox=x=0:y=716:w=1280:h=4:color={color}@0.8:t=fill")
+    filters.append(f"drawbox=x=0:y=0:w=4:h=720:color={color}@0.8:t=fill")
+    filters.append(f"drawbox=x=1276:y=0:w=4:h=720:color={color}@0.8:t=fill")
+
+    # 角标（左上角）
+    filters.append(
+        f"drawtext=x=10:y=10:fontfile={font_rel}:"
+        f"textfile={label_file}:"
+        f"fontsize=24:fontcolor={color}:box=1:boxcolor=black@0.5:boxborderw=4"
+    )
+
+    # 高亮圈（如果有坐标）
+    visual = seg.get("visual", "") or ""
+    if "highlight" in visual:
+        m = re.search(r'pos=\(?([\d.]+)\s*,?\s*([\d.]+)', visual)
+        if m:
+            px, py = _field_to_pixel(float(m.group(1)), float(m.group(2)))
+            filters.append(
+                f"drawtext=x={px-18}:y={py-18}:fontfile={font_rel}:"
+                f"text='●':fontsize=36:fontcolor=red@0.45"
+            )
+
+    # 底部字幕
+    filters.append(
+        f"drawtext=x=(w-text_w)/2:y=h-60:fontfile={font_rel}:"
+        f"textfile={subtitle_file}:"
+        f"fontsize=22:fontcolor=white:box=1:boxcolor=black@0.5:boxborderw=6"
+    )
+
+    filter_str = ",".join(filters)
+    subprocess.run([
+        "ffmpeg", "-y",
+        "-i", input_clip,
+        "-vf", filter_str,
+        "-c:v", "libx264", "-pix_fmt", "yuv420p",
+        "-preset", "fast", "-crf", "22",
+        "-an",
+        output_path,
+    ], capture_output=True, check=True)
+
+
 def create_titled_video(
     video_path: str,
     audio_path: str,
@@ -288,20 +343,22 @@ def create_titled_video(
 
         for i, seg in enumerate(timeline):
             seg_dur = seg["end"] - seg["start"]
+            seg_raw = str(_TMP_DIR / f"_raw_{i:03d}_{uuid.uuid4().hex[:6]}.mp4")
             seg_out = str(_TMP_DIR / f"_seg_{i:03d}_{uuid.uuid4().hex[:6]}.mp4")
 
+            # Step 1: create base clip
             if seg.get("visual_type") == "ai_scene" and mg_clips and mg_clips.get(i):
-                # A 段: 使用 MG 动画替代原画面
                 print(f"[video_overlay] Seg {i}: MG clip ({seg_dur:.1f}s)")
-                _trim_or_loop_clip(mg_clips[i], seg_dur, seg_out)
+                _trim_or_loop_clip(mg_clips[i], seg_dur, seg_raw)
             elif seg.get("visual_type") == "highlight" and seg.get("visual"):
-                # B 段: 定格 + 高亮圈
                 print(f"[video_overlay] Seg {i}: freeze-frame ({seg_dur:.1f}s)")
-                _create_highlight_freeze(video_path, seg, seg_out)
+                _create_highlight_freeze(video_path, seg, seg_raw)
             else:
-                # 其他: 原视频片段
                 print(f"[video_overlay] Seg {i}: raw clip ({seg_dur:.1f}s, type={seg.get('visual_type')})")
-                _trim_clip(video_path, seg["start"], seg_dur, seg_out)
+                _trim_clip(video_path, seg["start"], seg_dur, seg_raw)
+
+            # Step 2: add overlays (speaker label, border, highlight, subtitle)
+            _add_segment_overlays(seg_raw, seg, seg_out, font_rel)
 
             seg_clips.append(seg_out)
 
