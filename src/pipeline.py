@@ -143,6 +143,12 @@ def process_corner_kick(
     logger.info(f"Step 4b ✓: 时间轴 {timeline[-1]['end']:.1f}s" if timeline else "Step 4b ✓: 空时间轴")
 
     # ====== Step 4c: 渲染 MG 动画 ======
+    # Auto-upgrade: A 段的非 clear visual → ai_scene（确保 MG 动画覆盖懂哥解说）
+    for seg in segments:
+        if seg["speaker"] == "A" and seg.get("visual_type") != "ai_scene" and seg.get("visual_type") != "clear":
+            seg["visual"] = "ai_scene"
+            seg["visual_type"] = "ai_scene"
+
     predictions_list = predictions_data.get("predictions", []) if predictions_data else []
     ai_scene_segments = [
         {**seg, "actual_duration_sec": d}
