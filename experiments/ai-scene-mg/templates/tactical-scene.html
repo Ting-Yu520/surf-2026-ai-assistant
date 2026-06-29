@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #1a1a2e; overflow: hidden; }
+
+    #soccer-scene {
+      width: 1280px; height: 720px;
+      position: relative;
+      background: linear-gradient(135deg, #0f5e2e 0%, #1a7a3e 40%, #0f5e2e 100%);
+      font-family: 'Inter', 'Roboto', sans-serif;
+      overflow: hidden;
+    }
+
+    .clip { visibility: hidden; }
+
+    /* ---- Field ---- */
+    .field-overlay {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 220px 340px at 60% 50%, transparent 95%, rgba(255,255,255,0.15) 96%),
+        radial-gradient(circle 4px at 62% 50%, rgba(255,255,255,0.4) 95%, transparent 96%);
+    }
+    .penalty-box {
+      position: absolute; left: 700px; top: 160px;
+      width: 400px; height: 400px;
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+    .goal {
+      position: absolute; left: 1080px; top: 280px;
+      width: 30px; height: 160px;
+      border: 3px solid rgba(255,255,255,0.5); border-left: none;
+      background: rgba(255,255,255,0.05);
+    }
+    .goal-net {
+      position: absolute; left: 1080px; top: 280px;
+      width: 30px; height: 160px;
+      background: repeating-linear-gradient(
+        0deg, transparent, transparent 8px,
+        rgba(255,255,255,0.08) 8px, rgba(255,255,255,0.08) 9px
+      );
+    }
+
+    /* ---- Players ---- */
+    .player {
+      position: absolute; width: 32px; height: 32px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: bold; color: white;
+      z-index: 10;
+      box-shadow: 0 0 8px rgba(0,0,0,0.4);
+    }
+    .player.attacker { background: #e74c3c; border: 2px solid #ff6b6b; }
+    .player.defender { background: #3498db; border: 2px solid #5dade2; }
+    .player.ball      { background: #f39c12; border: 2px solid #f7dc6f; width: 20px; height: 20px; }
+    .player.unused    { display: none; }
+
+    .player-label {
+      position: absolute; white-space: nowrap;
+      color: white; font-size: 12px; font-weight: bold;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+      z-index: 11; pointer-events: none;
+    }
+
+    /* ---- Highlights ---- */
+    .highlight-ring {
+      position: absolute; border-radius: 50%;
+      border: 3px solid #ff4444;
+      pointer-events: none; z-index: 20;
+      box-shadow: 0 0 20px rgba(255,68,68,0.5);
+    }
+
+    /* ---- Arrow ---- */
+    .arrow-wrap {
+      position: absolute; z-index: 15;
+    }
+    .arrow-line {
+      position: relative; height: 3px;
+      background: linear-gradient(90deg, #ff6b6b, transparent);
+      transform-origin: left center;
+    }
+    .arrow-head {
+      position: relative;
+      width: 0; height: 0;
+      border-left: 12px solid #ff6b6b;
+      border-top: 6px solid transparent;
+      border-bottom: 6px solid transparent;
+    }
+
+    /* ---- Cards ---- */
+    .text-card {
+      position: absolute; padding: 12px 20px;
+      background: rgba(0,0,0,0.7);
+      border-left: 4px solid #e74c3c;
+      border-radius: 4px;
+      color: white; font-size: 20px; font-weight: bold;
+      z-index: 30;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    }
+    .text-card .sub { font-size: 14px; font-weight: normal; color: #aaa; margin-top: 4px; }
+    .text-card.highlight-yellow { border-left-color: #f1c40f; }
+    .text-card.highlight-blue  { border-left-color: #3498db; }
+
+    /* ---- Title ---- */
+    .scene-title {
+      position: absolute; top: 24px; left: 640px;
+      padding: 8px 24px;
+      background: rgba(0,0,0,0.6);
+      border-radius: 20px;
+      color: #fff; font-size: 16px; font-weight: bold;
+      z-index: 40;
+      border: 1px solid rgba(255,255,255,0.1);
+      white-space: nowrap;
+    }
+
+    /* ---- Chrome ---- */
+    .bottom-bar {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 50px;
+      background: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, transparent 100%);
+      z-index: 5;
+    }
+    .bottom-bar-text {
+      position: absolute; bottom: 12px; left: 20px;
+      color: rgba(255,255,255,0.6); font-size: 13px; z-index: 6;
+    }
+
+    /* ---- Info panel ---- */
+    .info-panel {
+      position: absolute; bottom: 70px; right: 24px;
+      padding: 16px 20px;
+      background: rgba(0,0,0,0.65);
+      border-radius: 8px;
+      color: white; font-size: 14px;
+      z-index: 25;
+      border: 1px solid rgba(255,255,255,0.08);
+      min-width: 180px;
+    }
+    .info-panel .label { color: #aaa; font-size: 12px; }
+    .info-panel .value { color: #f1c40f; font-size: 18px; font-weight: bold; }
+    .info-panel .value.prob-high { color: #2ecc71; }
+    .info-panel .value.prob-mid { color: #f39c12; }
+
+    /* ---- Side ornament ---- */
+    .side-ornament {
+      position: absolute; left: 0; top: 0; width: 4px; height: 100%;
+      background: linear-gradient(180deg, #e74c3c, #f39c12, #e74c3c);
+      z-index: 3;
+    }
+  </style>
+</head>
+<body>
+<div id="soccer-scene" data-composition-id="soccer-tactical"
+     data-width="1280" data-height="720" data-start="0" data-duration="5"
+     data-composition-variables='["players","ball","highlight","arrow","cards","title","duration"]'>
+
+  <!-- ===== Static field background ===== -->
+  <div class="field-overlay"></div>
+
+  <!-- ===== Field markings ===== -->
+  <div id="penalty-box" class="penalty-box clip"
+       data-track-index="1" data-start="0" data-duration="5"></div>
+  <div id="goal" class="goal clip"
+       data-track-index="2" data-start="0.3" data-duration="5"></div>
+  <div id="goal-net" class="goal-net clip"
+       data-track-index="3" data-start="0.3" data-duration="5"></div>
+
+  <!-- ===== Chrome ===== -->
+  <div id="bottom-bar" class="bottom-bar clip"
+       data-track-index="5" data-start="0" data-duration="5"></div>
+  <div id="bottom-text" class="bottom-bar-text clip"
+       data-track-index="6" data-start="0" data-duration="5">
+    SURF-2026 AI Tactical Assistant
+  </div>
+  <div id="side-ornament" class="side-ornament clip"
+       data-track-index="7" data-start="0" data-duration="5"></div>
+
+  <!-- ===== Scene title ===== -->
+  <div id="scene-title" class="scene-title clip"
+       data-track-index="0" data-start="0" data-duration="5">Tactical Scene</div>
+
+  <!-- ===== Player stubs (max 11 per side) ===== -->
+  <!-- Attackers -->
+  <div id="player-att-0"  class="player attacker unused clip" data-track-index="100" data-start="0.5" data-duration="5"></div>
+  <div id="player-att-1"  class="player attacker unused clip" data-track-index="101" data-start="0.6" data-duration="5"></div>
+  <div id="player-att-2"  class="player attacker unused clip" data-track-index="102" data-start="0.7" data-duration="5"></div>
+  <div id="player-att-3"  class="player attacker unused clip" data-track-index="103" data-start="0.8" data-duration="5"></div>
+  <div id="player-att-4"  class="player attacker unused clip" data-track-index="104" data-start="0.9" data-duration="5"></div>
+  <div id="player-att-5"  class="player attacker unused clip" data-track-index="105" data-start="1.0" data-duration="5"></div>
+  <div id="player-att-6"  class="player attacker unused clip" data-track-index="106" data-start="1.1" data-duration="5"></div>
+  <div id="player-att-7"  class="player attacker unused clip" data-track-index="107" data-start="1.2" data-duration="5"></div>
+  <div id="player-att-8"  class="player attacker unused clip" data-track-index="108" data-start="1.3" data-duration="5"></div>
+  <div id="player-att-9"  class="player attacker unused clip" data-track-index="109" data-start="1.4" data-duration="5"></div>
+  <div id="player-att-10" class="player attacker unused clip" data-track-index="110" data-start="1.5" data-duration="5"></div>
+  <!-- Defenders -->
+  <div id="player-def-0"  class="player defender unused clip" data-track-index="150" data-start="0.8" data-duration="5"></div>
+  <div id="player-def-1"  class="player defender unused clip" data-track-index="151" data-start="0.88" data-duration="5"></div>
+  <div id="player-def-2"  class="player defender unused clip" data-track-index="152" data-start="0.96" data-duration="5"></div>
+  <div id="player-def-3"  class="player defender unused clip" data-track-index="153" data-start="1.04" data-duration="5"></div>
+  <div id="player-def-4"  class="player defender unused clip" data-track-index="154" data-start="1.12" data-duration="5"></div>
+  <div id="player-def-5"  class="player defender unused clip" data-track-index="155" data-start="1.20" data-duration="5"></div>
+  <div id="player-def-6"  class="player defender unused clip" data-track-index="156" data-start="1.28" data-duration="5"></div>
+  <div id="player-def-7"  class="player defender unused clip" data-track-index="157" data-start="1.36" data-duration="5"></div>
+  <div id="player-def-8"  class="player defender unused clip" data-track-index="158" data-start="1.44" data-duration="5"></div>
+  <div id="player-def-9"  class="player defender unused clip" data-track-index="159" data-start="1.52" data-duration="5"></div>
+  <div id="player-def-10" class="player defender unused clip" data-track-index="160" data-start="1.60" data-duration="5"></div>
+
+  <!-- ===== Player label stub ===== -->
+  <span id="player-label" class="player-label unused clip"
+        data-track-index="200" data-start="1.0" data-duration="5"></span>
+
+  <!-- ===== Ball ===== -->
+  <div id="ball" class="player ball clip"
+       data-track-index="250" data-start="0.5" data-duration="5"></div>
+
+  <!-- ===== Highlight rings ===== -->
+  <div id="highlight-main" class="highlight-ring clip"
+       data-track-index="300" data-start="1.0" data-duration="5"></div>
+  <div id="highlight-ball" class="highlight-ring clip"
+       data-track-index="301" data-start="1.0" data-duration="5"
+       style="border-color:#f1c40f;"></div>
+
+  <!-- ===== Arrow ===== -->
+  <div id="arrow-line-wrap" class="arrow-wrap clip"
+       data-track-index="400" data-start="1.5" data-duration="5">
+    <div id="arrow-line" class="arrow-line" style="width:100px;"></div>
+  </div>
+  <div id="arrow-head-wrap" class="arrow-wrap clip"
+       data-track-index="401" data-start="1.5" data-duration="5">
+    <div id="arrow-head" class="arrow-head"></div>
+  </div>
+
+  <!-- ===== Text cards (max 5) ===== -->
+  <div id="card-0" class="text-card unused clip"
+       data-track-index="500" data-start="0.5" data-duration="5"></div>
+  <div id="card-1" class="text-card unused clip"
+       data-track-index="501" data-start="0.5" data-duration="5"></div>
+  <div id="card-2" class="text-card unused clip"
+       data-track-index="502" data-start="0.5" data-duration="5"></div>
+  <div id="card-3" class="text-card unused clip"
+       data-track-index="503" data-start="0.5" data-duration="5"></div>
+  <div id="card-4" class="text-card unused clip"
+       data-track-index="504" data-start="0.5" data-duration="5"></div>
+
+  <!-- ===== Info panel ===== -->
+  <div id="info-panel" class="info-panel clip"
+       data-track-index="600" data-start="1.0" data-duration="5"></div>
+
+</div>
+
+<!-- GSAP CDN -->
+<script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+
+<script>
+(function() {
+  // ---- 0. Read composition variables ----
+  var vars;
+  try {
+    vars = (window.__hyperframes && window.__hyperframes.getVariables) ?
+      window.__hyperframes.getVariables() : {};
+  } catch (e) {
+    vars = {};
+  }
+
+  var root = document.getElementById('soccer-scene');
+
+  // ---- 1. Duration ----
+  var duration = vars.duration || 5;
+  root.setAttribute('data-duration', String(duration));
+
+  // ---- 2. Title ----
+  if (vars.title) {
+    var titleEl = document.getElementById('scene-title');
+    titleEl.textContent = vars.title;
+    titleEl.setAttribute('data-duration', String(Math.max(0.5, duration - 0.1)));
+  }
+
+  // ---- 3. Players ----
+  var players = vars.players || [];
+  var topPlayer = null;
+  for (var pi = 0; pi < players.length; pi++) {
+    if (players[pi].is_top) { topPlayer = players[pi]; break; }
+  }
+  if (!topPlayer && players.length > 0) {
+    topPlayer = players[0];
+  }
+
+  var attIdx = 0, defIdx = 0;
+  for (var i = 0; i < players.length; i++) {
+    var p = players[i];
+    var role = p.role || 'attacker';
+    var slotId;
+    if (role === 'defender') {
+      slotId = 'player-def-' + defIdx;
+      defIdx++;
+    } else {
+      slotId = 'player-att-' + attIdx;
+      attIdx++;
+    }
+    var el = document.getElementById(slotId);
+    if (!el) continue;
+    el.classList.remove('unused');
+    el.style.left = p.x + 'px';
+    el.style.top  = p.y + 'px';
+    el.setAttribute('data-duration', String(Math.max(0.5, duration - 0.5 - i * 0.1)));
+  }
+
+  // Top player label
+  var labelEl = document.getElementById('player-label');
+  if (topPlayer && topPlayer.label && labelEl) {
+    labelEl.classList.remove('unused');
+    labelEl.textContent = topPlayer.label;
+    labelEl.style.left = (topPlayer.x - 12) + 'px';
+    labelEl.style.top  = (topPlayer.y - 28) + 'px';
+    labelEl.setAttribute('data-duration', String(Math.max(1, duration - 1.5)));
+  }
+
+  // ---- 4. Ball ----
+  if (vars.ball) {
+    var ball = document.getElementById('ball');
+    ball.style.left = vars.ball.x + 'px';
+    ball.style.top  = vars.ball.y + 'px';
+    ball.setAttribute('data-duration', String(Math.max(1, duration - 0.5)));
+  }
+
+  // ---- 5. Highlight rings ----
+  if (vars.highlight) {
+    var ring = document.getElementById('highlight-main');
+    ring.style.left   = (vars.highlight.x - 25) + 'px';
+    ring.style.top    = (vars.highlight.y - 25) + 'px';
+    ring.style.width  = '50px';
+    ring.style.height = '50px';
+    ring.setAttribute('data-duration', String(Math.max(2, duration - 2)));
+  }
+  if (vars.ball) {
+    var ballHl = document.getElementById('highlight-ball');
+    ballHl.style.left   = (vars.ball.x - 20) + 'px';
+    ballHl.style.top    = (vars.ball.y - 20) + 'px';
+    ballHl.style.width  = '40px';
+    ballHl.style.height = '40px';
+    ballHl.setAttribute('data-duration', String(Math.max(2, duration - 2.5)));
+  }
+
+  // ---- 6. Arrow ----
+  if (vars.arrow) {
+    var dx = vars.arrow.to_x - vars.arrow.from_x;
+    var dy = vars.arrow.to_y - vars.arrow.from_y;
+    var dist = Math.sqrt(dx * dx + dy * dy);
+    var angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+    var lineWrap = document.getElementById('arrow-line-wrap');
+    lineWrap.style.left = vars.arrow.from_x + 'px';
+    lineWrap.style.top  = vars.arrow.from_y + 'px';
+    lineWrap.style.transform = 'rotate(' + angle + 'deg)';
+    lineWrap.style.transformOrigin = '0 50%';
+    lineWrap.setAttribute('data-duration', String(Math.max(1.5, duration - 2.7)));
+
+    var line = document.getElementById('arrow-line');
+    line.style.width = dist + 'px';
+
+    var headWrap = document.getElementById('arrow-head-wrap');
+    headWrap.style.left = vars.arrow.to_x + 'px';
+    headWrap.style.top  = vars.arrow.to_y + 'px';
+    headWrap.style.transform = 'rotate(' + angle + 'deg)';
+    headWrap.setAttribute('data-duration', String(Math.max(1.5, duration - 2.7)));
+  }
+
+  // ---- 7. Text cards ----
+  var cards = vars.cards || [];
+  var cardHighlightClasses = ['', 'highlight-yellow', 'highlight-blue'];
+  for (var ci = 0; ci < cards.length; ci++) {
+    var cardEl = document.getElementById('card-' + ci);
+    if (!cardEl) continue;
+    var c = cards[ci];
+    cardEl.classList.remove('unused');
+    cardEl.style.left = '60px';
+    cardEl.style.top  = (140 + ci * 130) + 'px';
+    if (ci < cardHighlightClasses.length && cardHighlightClasses[ci]) {
+      cardEl.classList.add(cardHighlightClasses[ci]);
+    }
+    cardEl.setAttribute('data-start', String(0.5 + ci * 1.5));
+    cardEl.setAttribute('data-duration', String(Math.max(1, Math.min(2, duration - 0.5 - ci * 1.5))));
+
+    // Build card content
+    var html = c.title;
+    if (c.sub) {
+      html += '<div class="sub">' + c.sub + '</div>';
+    }
+    if (c.type === 'data' && c.value) {
+      html += '<div class="sub" style="color:#f1c40f;">' + c.value + '</div>';
+    }
+    cardEl.innerHTML = html;
+  }
+
+  // ---- 8. Info panel ----
+  var panel = document.getElementById('info-panel');
+  if (topPlayer && panel) {
+    var prob = topPlayer.probability || 0;
+    var probPct = Math.round(prob * 100) + '%';
+    var defPct  = Math.round(Math.max(0, 100 - prob * 100)) + '%';
+    var probClass = prob > 0.5 ? 'prob-high' : 'prob-mid';
+    panel.setAttribute('data-duration', String(Math.max(2, duration - 1.5)));
+    panel.innerHTML =
+      '<div class="label">最可能接球</div>' +
+      '<div class="value ' + probClass + '">' + probPct + '</div>' +
+      '<div style="margin-top:8px;border-top:1px solid rgba(255,255,255,0.1);padding-top:8px;">' +
+      '<div class="label">防守封堵率</div>' +
+      '<div class="value prob-mid">' + defPct + '</div>' +
+      '</div>';
+  }
+
+  // ==========================================
+  //   GSAP Timeline (always runs, targets
+  //   elements that now exist in the DOM)
+  // ==========================================
+  var tl = gsap.timeline({ paused: true });
+
+  // -- Title --
+  tl.fromTo('#scene-title',
+    { opacity: 0, y: -10, xPercent: -50 },
+    { opacity: 1, y: 0, xPercent: -50, duration: 0.5, ease: 'power2.out' }, 0);
+  tl.to('#scene-title',
+    { opacity: 0, y: -15, duration: 0.4, ease: 'power2.in' }, duration - 0.9);
+
+  // -- Chrome --
+  tl.fromTo('#bottom-bar',   { opacity: 0 }, { opacity: 1, duration: 0.3 }, 0);
+  tl.fromTo('#bottom-text',  { opacity: 0 }, { opacity: 1, duration: 0.4 }, 0.5);
+  tl.fromTo('#side-ornament',{ opacity: 0, scaleY: 0 },
+    { opacity: 1, scaleY: 1, duration: 0.4, ease: 'power2.out' }, 0.2);
+
+  // -- Field --
+  tl.fromTo('#penalty-box',
+    { opacity: 0, scale: 0.95 },
+    { opacity: 1, scale: 1, duration: 0.5, ease: 'power2.out' }, 0.3);
+  tl.fromTo('#goal',
+    { opacity: 0, x: -10 }, { opacity: 1, x: 0, duration: 0.5 }, 0.5);
+  tl.fromTo('#goal-net',
+    { opacity: 0 }, { opacity: 1, duration: 0.4 }, 0.6);
+
+  // -- Players (staggered, class selectors) --
+  tl.fromTo('.player.attacker:not(.unused)',
+    { opacity: 0, scale: 0 },
+    { opacity: 1, scale: 1, duration: 0.4, ease: 'back.out(2)', stagger: 0.1 }, 0.6);
+  tl.fromTo('.player.defender:not(.unused)',
+    { opacity: 0, scale: 0 },
+    { opacity: 1, scale: 1, duration: 0.35, ease: 'back.out(2)', stagger: 0.08 }, 0.9);
+
+  // -- Ball --
+  tl.fromTo('#ball',
+    { opacity: 0, scale: 0 },
+    { opacity: 1, scale: 1, duration: 0.3, ease: 'back.out(3)' }, 0.6);
+
+  // -- Label --
+  tl.fromTo('#player-label:not(.unused)',
+    { opacity: 0, y: 4 },
+    { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' }, 1.0);
+
+  // -- Highlight pulses --
+  tl.fromTo('#highlight-main',
+    { opacity: 0, scale: 0.5 },
+    { opacity: 0.9, scale: 1.2, duration: 0.5, ease: 'power2.out' }, 1.2);
+  tl.to('#highlight-main',
+    { scale: 0.9, opacity: 0.7, duration: 0.5, ease: 'sine.inOut' }, 1.7);
+  tl.to('#highlight-main',
+    { scale: 1.1, opacity: 0.9, duration: 0.5, ease: 'sine.inOut' }, 2.2);
+  tl.to('#highlight-main',
+    { opacity: 0, scale: 0.3, duration: 0.5 }, Math.max(2, duration - 1.3));
+  tl.set('#highlight-main', { opacity: 0 }, Math.max(2.5, duration - 0.8));
+
+  tl.fromTo('#highlight-ball',
+    { opacity: 0, scale: 0.5 },
+    { opacity: 0.8, scale: 1.3, duration: 0.5 }, 1.2);
+  tl.to('#highlight-ball',
+    { opacity: 0, scale: 0.3, duration: 0.5 }, Math.max(2, duration - 1.8));
+  tl.set('#highlight-ball', { opacity: 0 }, Math.max(2.5, duration - 1.3));
+
+  // -- Arrow --
+  tl.fromTo('#arrow-line',
+    { opacity: 0, scaleX: 0 },
+    { opacity: 0.9, scaleX: 1, duration: 0.5, ease: 'power2.out' }, 1.8);
+  tl.fromTo('#arrow-head',
+    { opacity: 0, x: -10 },
+    { opacity: 0.9, x: 0, duration: 0.3, ease: 'power2.out' }, 1.9);
+  tl.to('#arrow-line',  { opacity: 0.3, duration: 0.3 }, Math.max(2.5, duration - 1.5));
+  tl.to('#arrow-head',  { opacity: 0.3, duration: 0.3 }, Math.max(2.5, duration - 1.5));
+
+  // -- Cards --
+  for (var ci2 = 0; ci2 < cards.length; ci2++) {
+    var cStart = 0.5 + ci2 * 1.5;
+    var cEnd   = Math.max(cStart + 0.5, Math.min(cStart + 1.5, duration - 0.2));
+    tl.fromTo('#card-' + ci2,
+      { opacity: 0, x: -20 },
+      { opacity: 1, x: 0, duration: 0.4, ease: 'power2.out' }, cStart);
+    tl.to('#card-' + ci2,
+      { opacity: 0, x: -10, duration: 0.3 }, cEnd);
+    tl.set('#card-' + ci2, { opacity: 0 }, cEnd + 0.3);
+  }
+
+  // -- Info panel --
+  tl.fromTo('#info-panel',
+    { opacity: 0, x: 10 },
+    { opacity: 1, x: 0, duration: 0.4, ease: 'power2.out' }, 1.2);
+  tl.fromTo('#info-panel .value',
+    { opacity: 0, scale: 0.5 },
+    { opacity: 1, scale: 1, duration: 0.4, ease: 'back.out(2)', stagger: 0.2 }, 1.5);
+
+  // Register timeline
+  window.__timelines = window.__timelines || {};
+  window.__timelines['soccer-tactical'] = tl;
+})();
+</script>
+</body>
+</html>
