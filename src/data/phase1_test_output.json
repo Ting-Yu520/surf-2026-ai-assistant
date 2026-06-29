@@ -1,0 +1,220 @@
+[
+  {
+    "corner_entry": {
+      "id": "wc2026-corner-021",
+      "match": "Croatia vs Ghana",
+      "group": "Group L",
+      "date": "2026-06-28",
+      "minute": "unknown",
+      "score_at_time": "Croatia 1-0 Ghana",
+      "corner_type": "in-swinging",
+      "kick_taker": "Luka Modrić",
+      "goal_scorer": "Nikola Vlašić",
+      "goal_type": "header_center",
+      "result": "goal",
+      "video_urls": [
+        "https://sports.cctv.com/2026/06/28/VIDEUgri8VpDcD92Ozz4TXzH260628.shtml"
+      ],
+      "tactical_note": "Modrić delivered a trademark precise corner to the center of the box. Vlašić timed his run perfectly and directed a powerful header past the Ghanaian goalkeeper.",
+      "local_video_path": "data/videos/wc2026-corner-021.mp4",
+      "local_video_height": 720,
+      "video_quality": "720p"
+    },
+    "analysis": {
+      "corner_id": "wc2026-corner-021",
+      "match": "Croatia vs Ghana",
+      "date": "2026-06-28",
+      "minute": "unknown",
+      "score_at_time": "Croatia 1-0 Ghana",
+      "corner_type": "in-swinging",
+      "kick_taker": "Luka Modrić",
+      "goal_scorer": "Nikola Vlašić",
+      "goal_type": "header_center",
+      "result": "goal",
+      "tactical_note": "Modrić delivered a trademark precise corner to the center of the box. Vlašić timed his run perfectly and directed a powerful header past the Ghanaian goalkeeper.",
+      "tacticai_predictions": [
+        {
+          "player_index": 0,
+          "position": [
+            71.8,
+            25.1
+          ],
+          "is_attacker": true,
+          "receiver_probability": 0.4623,
+          "role": "FWD"
+        },
+        {
+          "player_index": 1,
+          "position": [
+            80.7,
+            47.7
+          ],
+          "is_attacker": true,
+          "receiver_probability": 0.0958,
+          "role": "MID"
+        },
+        {
+          "player_index": 2,
+          "position": [
+            77.4,
+            51.1
+          ],
+          "is_attacker": true,
+          "receiver_probability": 0.0958,
+          "role": "MID"
+        },
+        {
+          "player_index": 3,
+          "position": [
+            74.1,
+            46.6
+          ],
+          "is_attacker": true,
+          "receiver_probability": 0.0905,
+          "role": "MID"
+        },
+        {
+          "player_index": 4,
+          "position": [
+            64.4,
+            39.7
+          ],
+          "is_attacker": true,
+          "receiver_probability": 0.0741,
+          "role": "FWD"
+        },
+        {
+          "player_index": 11,
+          "position": [
+            67.3,
+            36.9
+          ],
+          "is_attacker": false,
+          "receiver_probability": 0.0741,
+          "role": "MID"
+        },
+        {
+          "player_index": 13,
+          "position": [
+            59.9,
+            19.0
+          ],
+          "is_attacker": false,
+          "receiver_probability": 0.0354,
+          "role": "GK"
+        },
+        {
+          "player_index": 5,
+          "position": [
+            45.2,
+            34.6
+          ],
+          "is_attacker": true,
+          "receiver_probability": 0.0217,
+          "role": "MID"
+        },
+        {
+          "player_index": 15,
+          "position": [
+            52.5,
+            37.4
+          ],
+          "is_attacker": false,
+          "receiver_probability": 0.0117,
+          "role": "DEF"
+        },
+        {
+          "player_index": 8,
+          "position": [
+            43.7,
+            38.4
+          ],
+          "is_attacker": false,
+          "receiver_probability": 0.0106,
+          "role": "DEF"
+        },
+        {
+          "player_index": 6,
+          "position": [
+            40.1,
+            37.8
+          ],
+          "is_attacker": false,
+          "receiver_probability": 0.0081,
+          "role": "GK"
+        },
+        {
+          "player_index": 10,
+          "position": [
+            50.1,
+            18.3
+          ],
+          "is_attacker": false,
+          "receiver_probability": 0.0065,
+          "role": "MID"
+        },
+        {
+          "player_index": 12,
+          "position": [
+            42.1,
+            51.0
+          ],
+          "is_attacker": false,
+          "receiver_probability": 0.0033,
+          "role": "DEF"
+        },
+        {
+          "player_index": 14,
+          "position": [
+            45.5,
+            50.3
+          ],
+          "is_attacker": false,
+          "receiver_probability": 0.0033,
+          "role": "DEF"
+        },
+        {
+          "player_index": 7,
+          "position": [
+            46.5,
+            57.7
+          ],
+          "is_attacker": false,
+          "receiver_probability": 0.0027,
+          "role": "DEF"
+        },
+        {
+          "player_index": 16,
+          "position": [
+            32.0,
+            41.4
+          ],
+          "is_attacker": false,
+          "receiver_probability": 0.0021,
+          "role": "DEF"
+        },
+        {
+          "player_index": 9,
+          "position": [
+            53.4,
+            53.6
+          ],
+          "is_attacker": false,
+          "receiver_probability": 0.002,
+          "role": "MID"
+        }
+      ],
+      "tacticai_top_receiver": 0,
+      "tacticai_top_probability": 0.4623,
+      "optimization_possible": false,
+      "optimized_probability": 0.0,
+      "recognized_players": [],
+      "game_context": {},
+      "commentary_snippet": ""
+    },
+    "formatted": {
+      "fact_section": "比赛：Croatia vs Ghana\n时间：unknown'\n进球者：Nikola Vlašić\n战术描述：Modrić delivered a trademark precise corner to the center of the box. Vlašić timed his run perfectly and directed a powerful header past the Ghanaian goalkeeper.",
+      "tactic_section": "攻击球员：6人\n防守球员：11人\n最可能接球概率：46.2%\n最可能接球位置：(72, 25)\n防守方关键位置：(67, 37)"
+    }
+  }
+]
