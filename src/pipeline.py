@@ -15,6 +15,8 @@ from config import (
 )
 from tts_client import generate_audio, generate_timeline_audio, concat_audio_segments
 from prompts.corner_kick import DUO_SYSTEM_PROMPT, DUO_USER_TEMPLATE
+from phase_bridge import get_real_or_sample, build_field_mapping, tacticai_to_phase2, format_for_prompt
+from mg_renderer import render_all_mg_clips
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -33,6 +35,38 @@ def process_corner_kick(
     t0 = time.time()
     result = {}
     prefix = output_prefix + "_" if output_prefix else ""
+
+    # ====== Step 0: 获取真实预测数据 ======
+    predictions_data = None
+    mapping = None
+    if corner_entry:
+        predictions_data = get_real_or_sample(corner_entry)
+        if predictions_data and predictions_data.get("predictions"):
+            mapping = build_field_mapping(predictions_data["predictions"])
+            logger.info(f"Step 0 ✓: {len(predictions_data['predictions'])} real player positions loaded")
+
+    # Make predictions available for the prompt formatting
+    if predictions_data:
+        # Pass predictions into the formatted data for LLM prompt context
+        phase2_input = tacticai_to_phase2(predictions_data)
+        formatted_from_real = format_for_prompt(phase2_input, corner_entry)
+        if not formatted:
+            formatted = formatted_from_real
+        # Also augment the tactic_section with real probability data
+        if formatted and predictions_data.get("predictions"):
+            top_preds = sorted(predictions_data["predictions"],
+                              key=lambda p: p.get("probability", 0), reverse=True)[:3]
+            extra = "\nTacticAI 真实预测数据:\n"
+            for p in top_preds:
+                role = p.get("role", "球员")
+                prob = p.get("probability", 0)
+                pos = p["position"]
+                extra += f"- {role}#{p['player_index']}: 接球概率 {prob*100:.1f}%, 位置({pos[0]:.0f},{pos[1]:.0f})\n"
+            formatted["tactic_section"] = formatted.get("tactic_section", "") + extra
+
+    # Store for later use
+    result["predictions_data"] = predictions_data
+    result["mapping"] = mapping
 
     # ====== Step 1: 获取输入数据 ======
     if formatted:
@@ -108,6 +142,30 @@ def process_corner_kick(
     result['timeline'] = timeline
     logger.info(f"Step 4b ✓: 时间轴 {timeline[-1]['end']:.1f}s" if timeline else "Step 4b ✓: 空时间轴")
 
+    # ====== Step 4c: 渲染 MG 动画 ======
+    predictions_list = predictions_data.get("predictions", []) if predictions_data else []
+    ai_scene_segments = [
+        {**seg, "actual_duration_sec": d}
+        for seg, d in zip(segments, [s["actual_duration_sec"] for s in tts_segments])
+        if seg.get("visual_type") == "ai_scene"
+    ]
+
+    mg_clips = {}
+    if ai_scene_segments and predictions_list and mapping:
+        logger.info(f"Step 4c: Rendering {len(ai_scene_segments)} MG animation segments...")
+        mg_clips = render_all_mg_clips(
+            ai_scene_segments, predictions_list, mapping, corner_entry or {}, prefix
+        )
+        ok = sum(1 for v in mg_clips.values() if v)
+        logger.info(f"Step 4c ✓: {ok}/{len(mg_clips)} MG clips rendered")
+    else:
+        reason = "no ai_scene segments" if not ai_scene_segments else \
+                 "no predictions data" if not predictions_list else \
+                 "no field mapping"
+        logger.info(f"Step 4c ⏭: Skipped ({reason})")
+
+    result["mg_clips"] = mg_clips
+
     # ====== Step 5: 视频合成 ======
     if video_path:
         from video_overlay import create_titled_video
@@ -124,6 +182,7 @@ def process_corner_kick(
             match_info=match_info or "⚽ AI 角球战术解说",
             total_dur=total_dur,
             tacticai_predictions=tacticai_predictions,
+            mg_clips=mg_clips,
         )
         result['output_video'] = output_video
         logger.info(f"Step 5 ✓: {output_video}")
