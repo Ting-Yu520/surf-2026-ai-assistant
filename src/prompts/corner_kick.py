@@ -111,6 +111,9 @@ def parse_duo_output(output: str) -> list[dict]:
             if visual == 'ai_scene':
                 current["visual"] = 'ai_scene'
                 current["visual_type"] = 'ai_scene'
+            elif visual == 'clear':
+                current["visual"] = 'clear'
+                current["visual_type"] = 'clear'
             else:
                 current["visual"] = visual
                 current["visual_type"] = 'highlight'
