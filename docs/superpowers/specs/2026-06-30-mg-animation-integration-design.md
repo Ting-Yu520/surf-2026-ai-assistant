@@ -55,32 +55,39 @@ Phase1 TacticAI 数据 ──→  Formatted (fact + tactic)
 
 ## 三、真实数据管线
 
-### 3.1 数据源（双路径自适应，绝不使用模拟数据）
+### 3.1 数据源（所有数据来自 Phase 1 真实推理，绝不使用模拟数据）
 
-路径 A（优先）: Gemini VLM 视频帧分析
-路径 B（fallback）: TacticAI Recreation GNN 模型预测
-
-```python
-def get_real_positions(corner_entry, video_path=None):
-    if video_path and GEMINI_API_KEY:
-        frames = extract_key_frames(video_path, corner_entry["minute"])
-        positions = analyze_frames_with_vlm(frames)
-        return positions, source="gemini-vlm"
-    elif TACTICAI_MODEL_READY:
-        predictions = tacticai.predict(corner_entry)
-        return predictions, source="tacticai-gnn"
-    else:
-        raise NoRealDataError("需要视频文件或 TacticAI 模型")
-```
-
-### 3.2 球场区域检测（从视频中检测，非硬编码）
+Phase 1 现状：
+- `phase1_batch_output.json` — TacticAI GNN 批量推理输出（已训练模型，22球员坐标+概率）
+- `phase1_socceragent.py` — SoccerAgent 增强桥接（DeepSeek + 2459场DB，视频理解）
+- `phase1_matchtime.py` — MatchTime 解说对齐接口（预留）
+- `phase1_runner.py` — 统一入口 `--source tacticai|socceragent|matchtime|both`
 
 ```python
-def detect_field_rect(video_frame):
-    """从真实视频帧检测球场在画面中的像素区域"""
-    # 使用 Gemini VLM 检测
-    return {"left": px, "right": px, "top": py, "bottom": py}
+def get_real_positions(corner_entry):
+    """
+    从 Phase 1 真实推理数据获取球员坐标。
+    优先 TacticAI + SoccerAgent 组合，fallback 到单独 TacticAI。
+    """
+    # 路径 A: TacticAI GNN 推理（已训练，有 batch 输出）
+    if PHASE1_BATCH_OUTPUT.exists():
+        batch = load_json(PHASE1_BATCH_OUTPUT)
+        match = batch.get(corner_entry["id"])
+        if match:
+            return match["predictions"], source="tacticai-gnn"
+    
+    # 路径 B: SoccerAgent 视频理解（2459场DB）
+    if corner_entry.get("video_path"):
+        from phase1_runner import run_socceragent
+        return run_socceragent(corner_entry), source="socceragent"
+    
+    raise NoRealDataError("需要 Phase 1 推理输出或视频文件")
 ```
+
+### 3.2 球场区域检测
+
+SoccerAgent 的 `camera_detection.py` 可检测机位和球场边界。
+若 SoccerAgent 不可用，根据 TacticAI 坐标范围自适应推算区域（见 3.3）。
 
 ### 3.3 坐标映射（自适应数据范围，无魔法数字）
 
@@ -118,17 +125,16 @@ def build_mapping(positions, field_rect):
 | 文件 | 改动 |
 |------|------|
 | `src/prompts/corner_kick.py` | Prompt 新增 ai_scene 视觉指令类型 |
-| `src/pipeline.py` | Step 1 加入视频分析，新增 Step 4c MG 渲染 |
+| `src/pipeline.py` | Step 1 读取 Phase 1 真实数据，新增 Step 4c MG 渲染 |
 | `src/video_overlay.py` | 新增 MG clip 注入 + B 段定格慢动作 + 片头进球回放 |
-| `src/phase_bridge.py` | 替换 sample_tacticai_output() 为真实数据路径 |
+| `src/phase_bridge.py` | 扩展：支持包含球场区域检测的自适应坐标映射 |
 
 ### 新增的文件
 
 | 文件 | 职责 |
 |------|------|
 | `src/mg_renderer.py` | HyperFrames 接口：变量填 JSON → 调 npx 渲染 → 返回 clip |
-| `src/vision_analyzer.py` | Gemini VLM 接口：视频帧 → 检测球场区域 + 球员位置 |
-| `experiments/ai-scene-mg/templates/tactical-scene.html` | 通用 MG 模板（变量驱动） |
+| `experiments/ai-scene-mg/templates/tactical-scene.html` | 通用 MG 模板（变量驱动，GSAP 动画） |
 
 ---
 
@@ -178,8 +184,8 @@ const vars = window.__hyperframes.getVariables();
 
 | 场景 | 处理 |
 |------|------|
-| Gemini VLM 不可用 | fallback TacticAI 模型预测 |
-| TacticAI 模型未训练 | 使用 corner_kicks_2026.json 文本描述，无坐标时以文本解说为主 |
+| Phase 1 batch 输出不完整 | fallback SoccerAgent 单独分析 |
+| SoccerAgent/视频不可用 | 使用 corner_kicks_2026.json 文本描述，无坐标时以文本解说为主 |
 | HyperFrames 渲染超时 (>120s) | 跳过该段 MG，用真实画面 + ffmpeg 数据卡片叠层替代 |
 | 某段渲染失败 | 不影响其他段，失败段用静态数据卡替代 |
 
