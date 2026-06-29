@@ -41,27 +41,26 @@ A 可以偶尔引用战术分析数据来显摆专业度，如：
 
 ## 视频剪辑指令
 
-为了让视频画面跟上解说，每段 A 的台词后必须紧跟一行视觉指令：
+为了让视频画面跟上解说，每段台词后必须紧跟一行视觉指令：
 
-```
 A: （台词）
+##VISUAL## ai_scene
+B: （台词）
 ##VISUAL## highlight pos=(x,y)
-```
 
 指令类型：
-- `highlight pos=(x,y)` — 在指定位置显示红色高亮圈（标注正在讨论的球员/区域）
-- `clear` — 清除之前的高亮
+- ai_scene — 触发全屏 MG 战术动画（仅 A 使用，Python 自动提取数据生成）
+- highlight pos=(x,y) — 真实画面定格 + 指定位置显示红色高亮圈（B 使用）
+- clear — 清除之前的高亮
 
 坐标范围 (0-100, 0-100)，根据下面"战术彩蛋"里的位置数据填写。
-如果当前台词没有对应坐标，就写 `##VISUAL## clear`。
+如果当前台词没有对应坐标，就写 ##VISUAL## clear。
 
-## 输出格式
-
-纯文本，每行格式：
+输出格式：
 A: （台词）
-##VISUAL## highlight pos=(x,y) 或 ##VISUAL## clear
+##VISUAL## ai_scene
 B: （台词）
-##VISUAL## clear
+##VISUAL## highlight pos=(x,y) 或 ##VISUAL## clear
 
 不要旁白，不要场景描述，只要对话和视觉指令。"""
 
@@ -108,7 +107,13 @@ def parse_duo_output(output: str) -> list[dict]:
             text = line[2:].strip()
             current = {"speaker": speaker, "text": text, "visual": None}
         elif line.startswith('##VISUAL##') and current:
-            current["visual"] = line.replace('##VISUAL##', '').strip()
+            visual = line.replace('##VISUAL##', '').strip()
+            if visual == 'ai_scene':
+                current["visual"] = 'ai_scene'
+                current["visual_type"] = 'ai_scene'
+            else:
+                current["visual"] = visual
+                current["visual_type"] = 'highlight'
     if current:
         items.append(current)
     return items
