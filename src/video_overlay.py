@@ -281,6 +281,7 @@ def create_titled_video(
 
     if mg_clips and any(mg_clips.values()):
         # ====== NEW: Clip-based composition (MG + freeze-frame + real) ======
+        print(f"[video_overlay] Clip-based path: {len([v for v in mg_clips.values() if v])} MG clips available")
         _TMP_DIR.mkdir(parents=True, exist_ok=True)
         seg_clips = []
 
@@ -290,12 +291,15 @@ def create_titled_video(
 
             if seg.get("visual_type") == "ai_scene" and mg_clips and mg_clips.get(i):
                 # A 段: 使用 MG 动画替代原画面
+                print(f"[video_overlay] Seg {i}: MG clip ({seg_dur:.1f}s)")
                 _trim_or_loop_clip(mg_clips[i], seg_dur, seg_out)
             elif seg.get("visual_type") == "highlight" and seg.get("visual"):
                 # B 段: 定格 + 高亮圈
+                print(f"[video_overlay] Seg {i}: freeze-frame ({seg_dur:.1f}s)")
                 _create_highlight_freeze(video_path, seg, seg_out)
             else:
                 # 其他: 原视频片段
+                print(f"[video_overlay] Seg {i}: raw clip ({seg_dur:.1f}s, type={seg.get('visual_type')})")
                 _trim_clip(video_path, seg["start"], seg_dur, seg_out)
 
             seg_clips.append(seg_out)

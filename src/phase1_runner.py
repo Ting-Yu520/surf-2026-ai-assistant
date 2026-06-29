@@ -1,18 +1,24 @@
 """
-Phase 1 统一推理器 — 将 TacticAI 和 SoccerAgent 的输出转为 Phase 2 格式。
+Phase 1 统一推理器 — 将 TacticAI、SoccerAgent、MatchTime 的输出转为 Phase 2 格式。
+
+已就绪:  TacticAI (GNN 推理) + SoccerAgent (LLM 上下文)
+预留接口: MatchTime (单人 AI 解说, 需 >16GB VRAM)
 
 用法:
-  # WSL 环境
   source /mnt/d/ClaudeWorkspace/phase1/venv/bin/activate
   cd /mnt/d/ClaudeWorkspace/projects/surf-2026-ai-tactical-assistant
-  python3 src/phase1_runner.py --source tacticai --output src/data/phase1_tacticai_output.json
 
-  # 或者在 Phase 2 venv 中使用（如果安装了 TacticAI 依赖）
-  python3 src/phase1_runner.py --source tacticai --checkpoint PATH
+  # 单个角球: TacticAI + SoccerAgent
+  python3 src/phase1_runner.py --source both --entry-id wc2026-corner-021
+
+  # 批量: 所有 21 个角球
+  python3 src/phase1_runner.py --source both --output src/data/phase1_output.json
 
 架构:
-  TacticAI 训练模型 ──→ 推理 ──→ 标准化 JSON ──→ Phase 2 pipeline.py
-  SoccerAgent 工具   ──→ 推理 ──→ 标准化 JSON ──→ Phase 2 pipeline.py
+  TacticAI (GNN)    ──→ 接球概率/球员位置 ──┐
+  SoccerAgent (LLM) ──→ 比赛上下文/球员背景 ──┤
+  MatchTime  (预留) ──→ AI 单人解说 ─────────┤
+                                              ├──→ Phase 2 pipeline.py → 🎬
 """
 
 import json
@@ -21,6 +27,8 @@ import os
 from pathlib import Path
 from typing import Optional, Dict, List, Any
 from dataclasses import dataclass, field, asdict
+
+ROOT = Path(__file__).parent.parent  # surf-2026-ai-tactical-assistant 根目录
 
 # ============================================================
 # 标准化 Phase 1 输出 Schema
@@ -335,13 +343,13 @@ class TacticAIInference:
 
 
 # ============================================================
-# SoccerAgent 轻量接入
+# SoccerAgent 增强接入
 # ============================================================
 
 class SoccerAgentBridge:
     """
-    轻量 SoccerAgent 桥接 — 提供游戏数据库查询、实体识别等能力
-    无需完整安装所有模型依赖即可使用文本类工具。
+    SoccerAgent 桥接 — 调用 phase1_socceragent 的增强能力。
+    利用 DeepSeek API + game_database.csv 提取丰富的比赛上下文。
     """
 
     def __init__(self, codebase_path: str = None):
@@ -350,74 +358,24 @@ class SoccerAgentBridge:
                 Path(__file__).parent.parent / "phase1" / "tools" / "soccer-agent"
             )
         self.codebase_path = Path(codebase_path)
-        self._db = None
-        self._initialized = False
+        self._enhanced = None
 
-    def _ensure_db(self):
-        """延迟加载比赛数据库"""
-        if self._db is not None:
-            return
-        csv_path = self.codebase_path / "database" / "Game_dataset_csv" / "game_database.csv"
-        if csv_path.exists():
-            import pandas as pd
-            self._db = pd.read_csv(csv_path)
-            print(f"[SoccerAgent] Loaded game database: {len(self._db)} records")
-
-    def search_game(self, team_name: str = None, date: str = None, competition: str = None) -> List[Dict]:
-        """搜索比赛信息"""
-        self._ensure_db()
-        if self._db is None:
-            return []
-
-        df = self._db
-        if team_name:
-            df = df[df.apply(lambda r: team_name.lower() in str(r.values).lower(), axis=1)]
-        if date:
-            df = df[df.apply(lambda r: date in str(r.get("date", "")), axis=1)]
-
-        return df.head(10).to_dict(orient="records")
-
-    def get_match_context(self, match_str: str) -> Dict[str, str]:
-        """
-        从比赛字符串（如 "Croatia vs Ghana"）提取上下文信息。
-        """
-        info = {
-            "tournament": "",
-            "venue": "",
-            "referee": "",
-            "attendance": "",
-        }
-
-        self._ensure_db()
-        if self._db is not None:
-            # 尝试匹配
-            parts = match_str.split("vs")
-            if len(parts) == 2:
-                team_a = parts[0].strip()
-                team_b = parts[1].strip()
-                mask = self._db.apply(
-                    lambda r: team_a.lower() in str(r.values).lower()
-                    and team_b.lower() in str(r.values).lower(),
-                    axis=1,
-                )
-                matches = self._db[mask]
-                if not matches.empty:
-                    row = matches.iloc[0]
-                    info["tournament"] = str(row.get("league", row.get("competition", "")))
-                    info["venue"] = str(row.get("venue", row.get("stadium", "")))
-                    info["attendance"] = str(row.get("attendance", ""))
-
-        return info
+    def _get_enhanced(self):
+        if self._enhanced is None:
+            try:
+                from phase1_socceragent import SoccerAgentEnhanced
+                self._enhanced = SoccerAgentEnhanced()
+            except Exception as e:
+                print(f"[SoccerAgent] Enhanced bridge unavailable: {e}")
+                self._enhanced = False
+        return self._enhanced if self._enhanced else None
 
     def extract_match_facts(self, entry: dict) -> Dict:
-        """
-        从 corner entry 提取结构化比赛事实。
-        结合数据库和 entry 已有的信息。
-        """
+        """从 corner entry 提取结构化比赛上下文"""
         match = entry.get("match", "")
-        db_info = self.get_match_context(match)
+        enhanced = self._get_enhanced()
 
-        return {
+        result = {
             "match": match,
             "date": entry.get("date", ""),
             "score": entry.get("score_at_time", ""),
@@ -426,9 +384,23 @@ class SoccerAgentBridge:
             "kick_taker": entry.get("kick_taker", ""),
             "goal_scorer": entry.get("goal_scorer", ""),
             "result": entry.get("result", ""),
-            "tournament": db_info.get("tournament", "2026 FIFA World Cup"),
-            "venue": db_info.get("venue", ""),
+            "tournament": "",
+            "venue": "",
+            "entities": {},
         }
+
+        if enhanced:
+            try:
+                # 用增强桥接获取更丰富的上下文
+                ctx = enhanced.enhance_corner_entry(entry)
+                sa_ctx = ctx.get("socceragent_context", {})
+                gs = sa_ctx.get("game_search") or {}
+                result["tournament"] = gs.get("league", "2026 FIFA World Cup")
+                result["entities"] = sa_ctx.get("entities", {})
+            except Exception as e:
+                print(f"[SoccerAgent] Context enhancement failed: {e}")
+
+        return result
 
 
 # ============================================================
@@ -493,8 +465,37 @@ def run_phase1_pipeline(
         for r in results:
             entry = r["corner_entry"]
             match_facts = bridge.extract_match_facts(entry)
+
+            # 将 SoccerAgent 上下文注入到 formatted 输出
+            if match_facts.get("tournament"):
+                old_fact = r["formatted"]["fact_section"]
+                additions = []
+                if match_facts.get("tournament"):
+                    additions.append(f"赛事：{match_facts['tournament']}")
+                new_fact = "\n".join(additions) + "\n" + old_fact if additions else old_fact
+                r["formatted"]["fact_section"] = new_fact
+
             r["match_context"] = match_facts
-            print(f"   📋 {entry.get('id', '?')}: {match_facts['match']}")
+            print(f"   📋 {entry.get('id', '?')}: {match_facts['match']} "
+                  f"({match_facts.get('tournament', '?')})")
+
+    if source in ("matchtime", "both"):
+        # MatchTime 预留接口 — 当 phase1_matchtime.MATCHTIME_AVAILABLE = True 时激活
+        from phase1_matchtime import MATCHTIME_AVAILABLE, generate_commentary
+        if MATCHTIME_AVAILABLE:
+            print("\n" + "=" * 60)
+            print(" [Phase 1] MatchTime AI 解说生成")
+            print("=" * 60)
+            for r in results:
+                entry = r["corner_entry"]
+                vid = entry.get("local_video_path", "")
+                if vid:
+                    commentary = generate_commentary(str(ROOT / vid))
+                    if commentary:
+                        r["matchtime_commentary"] = commentary
+                        print(f"   🎙️ {entry.get('id', '?')}: {len(commentary)} chars")
+        else:
+            print("\n [Phase 1] MatchTime ⏭ (硬件不满足，跳过)")
 
     # 保存输出
     if output_path:
@@ -515,7 +516,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Phase 1 统一推理器")
-    parser.add_argument("--source", choices=["tacticai", "socceragent", "both"], default="tacticai")
+    parser.add_argument("--source", choices=["tacticai", "socceragent", "matchtime", "both"], default="tacticai")
     parser.add_argument("--checkpoint", help="TacticAI checkpoint path")
     parser.add_argument("--dataset", default="src/data/corner_kicks_2026.json", help="角球数据集 JSON")
     parser.add_argument("--output", default="src/data/phase1_output.json")
