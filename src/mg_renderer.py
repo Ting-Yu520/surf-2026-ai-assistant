@@ -129,7 +129,7 @@ def render_mg_clip(variables: dict, output_name: str) -> Optional[str]:
 
     cmd = [
         "npx.cmd", "hyperframes", "render",
-        "--composition", str(TEMPLATE_HTML),
+        "--composition", "tactical-scene.html",
         "--variables-file", str(var_file),
         "-f", "30",
         "-q", "standard",
