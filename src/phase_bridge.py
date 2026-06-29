@@ -125,14 +125,29 @@ class _RNG:
 
 BATCH_OUTPUT_PATH = DATA_DIR / "phase1_batch_output.json"
 
+_batch_cache = None
+
 
 def load_batch_output() -> dict:
-    """加载 Phase 1 批量推理输出，建立 corner_id → entry 索引"""
+    """加载 Phase 1 批量推理输出，建立 corner_id → entry 索引（缓存结果，仅首次读取文件）"""
+    global _batch_cache
+    if _batch_cache is not None:
+        return _batch_cache
     if not BATCH_OUTPUT_PATH.exists():
+        _batch_cache = {}
         return {}
-    with open(BATCH_OUTPUT_PATH, "r", encoding="utf-8") as f:
-        entries = json.load(f)
-    return {e["corner_entry"]["id"]: e for e in entries}
+    try:
+        with open(BATCH_OUTPUT_PATH, "r", encoding="utf-8") as f:
+            entries = json.load(f)
+    except json.JSONDecodeError:
+        _batch_cache = {}
+        return {}
+    _batch_cache = {
+        e.get("corner_entry", {}).get("id"): e
+        for e in entries
+        if e.get("corner_entry", {}).get("id")
+    }
+    return _batch_cache
 
 
 def get_real_predictions(corner_id: str) -> dict | None:
@@ -146,7 +161,9 @@ def get_real_predictions(corner_id: str) -> dict | None:
     if not entry:
         return None
 
-    analysis = entry["analysis"]
+    analysis = entry.get("analysis")
+    if not analysis:
+        return None
     preds = analysis.get("tacticai_predictions", [])
     if not preds:
         return None
@@ -187,6 +204,8 @@ def build_field_mapping(predictions: list[dict], canvas_width: int = 1280, canva
     无硬编码。画面布局常量仅定义绘制区域的边界（UI 设计参数），
     坐标映射完全由数据范围驱动。
     """
+    if not predictions:
+        return None
     xs = [p["position"][0] for p in predictions]
     ys = [p["position"][1] for p in predictions]
 
