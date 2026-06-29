@@ -272,15 +272,21 @@ def _add_segment_overlays(input_clip: str, seg: dict, output_path: str, font_rel
     )
 
     filter_str = ",".join(filters)
-    subprocess.run([
-        "ffmpeg", "-y",
-        "-i", input_clip,
-        "-vf", filter_str,
-        "-c:v", "libx264", "-pix_fmt", "yuv420p",
-        "-preset", "fast", "-crf", "22",
-        "-an",
-        output_path,
-    ], capture_output=True, check=True)
+    try:
+        subprocess.run([
+            "ffmpeg", "-y",
+            "-i", input_clip,
+            "-vf", filter_str,
+            "-c:v", "libx264", "-pix_fmt", "yuv420p",
+            "-preset", "fast", "-crf", "22",
+            "-an",
+            output_path,
+        ], capture_output=True, check=True, timeout=30)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
+        print(f"[video_overlay] Overlay failed for seg, using raw clip: {e}")
+        # Fallback: copy raw clip without overlays
+        subprocess.run(["ffmpeg", "-y", "-i", input_clip, "-c", "copy", output_path],
+                       capture_output=True, check=True)
 
 
 def create_titled_video(

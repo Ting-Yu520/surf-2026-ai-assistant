@@ -136,18 +136,19 @@ def process_corner_kick(
     result['audio_path'] = audio_path
     logger.info(f"Step 4 ✓: {len(tts_segments)} 段 TTS")
 
-    # ====== Step 4b: 组装时间轴 ======
+    # ====== Step 4b: Auto-upgrade + 组装时间轴 ======
+    # Auto-upgrade: A 段非 clear visual → ai_scene（必须在 build_timeline 之前）
+    for seg in segments:
+        if seg["speaker"] == "A" and seg.get("visual_type") != "ai_scene" and seg.get("visual_type") != "clear":
+            seg["visual"] = "ai_scene"
+            seg["visual_type"] = "ai_scene"
+
     from video_overlay import build_timeline
     timeline = build_timeline(segments, [s["actual_duration_sec"] for s in tts_segments])
     result['timeline'] = timeline
     logger.info(f"Step 4b ✓: 时间轴 {timeline[-1]['end']:.1f}s" if timeline else "Step 4b ✓: 空时间轴")
 
     # ====== Step 4c: 渲染 MG 动画 ======
-    # Auto-upgrade: A 段的非 clear visual → ai_scene（确保 MG 动画覆盖懂哥解说）
-    for seg in segments:
-        if seg["speaker"] == "A" and seg.get("visual_type") != "ai_scene" and seg.get("visual_type") != "clear":
-            seg["visual"] = "ai_scene"
-            seg["visual_type"] = "ai_scene"
 
     predictions_list = predictions_data.get("predictions", []) if predictions_data else []
     ai_scene_segments = [
