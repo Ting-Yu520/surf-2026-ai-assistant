@@ -151,8 +151,8 @@ def process_corner_kick(
 
     predictions_list = predictions_data.get("predictions", []) if predictions_data else []
     ai_scene_segments = [
-        {**seg, "actual_duration_sec": d}
-        for seg, d in zip(segments, [s["actual_duration_sec"] for s in tts_segments])
+        {**seg, "actual_duration_sec": d, "orig_index": i}
+        for i, (seg, d) in enumerate(zip(segments, [s["actual_duration_sec"] for s in tts_segments]))
         if seg.get("visual_type") == "ai_scene"
     ]
 

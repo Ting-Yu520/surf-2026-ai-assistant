@@ -162,11 +162,13 @@ def render_all_mg_clips(scene_segments: list[dict], predictions: list[dict],
     for i, seg in enumerate(scene_segments):
         if seg.get("visual_type") != "ai_scene":
             continue
+        # Use original timeline index so video_overlay can match segments correctly
+        idx = seg.get("orig_index", i)
         variables = build_scene_variables(
             predictions, mapping, seg["actual_duration_sec"], corner_entry
         )
-        clip_path = render_mg_clip(variables, f"{prefix}mg_{i:03d}")
-        results[i] = clip_path
-        print(f"[mg_renderer] Segment {i}: {'OK' if clip_path else 'FAILED'} "
+        clip_path = render_mg_clip(variables, f"{prefix}mg_{idx:03d}")
+        results[idx] = clip_path
+        print(f"[mg_renderer] Segment {idx}: {'OK' if clip_path else 'FAILED'} "
               f"({seg['actual_duration_sec']:.1f}s → {variables['duration']:.1f}s)")
     return results
