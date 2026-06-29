@@ -83,6 +83,7 @@ def build_timeline(
             "speaker": seg["speaker"],
             "text": seg["text"],
             "visual": seg.get("visual"),
+            "visual_type": seg.get("visual_type"),
             "start": cursor,
             "end": cursor + dur,
         })
