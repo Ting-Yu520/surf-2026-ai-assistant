@@ -138,6 +138,95 @@ def _build_zoompan(total_dur: float, fps: int = 25) -> str:
     return f"zoompan=z='{z}':x='{x}':y='{y}':d=1:s=1280x720:fps={fps}"
 
 
+def _trim_clip(video_path: Path, start: float, duration: float, output_path: str):
+    """从视频中裁剪一段，无音频"""
+    subprocess.run([
+        "ffmpeg", "-y",
+        "-ss", str(start),
+        "-i", str(video_path),
+        "-t", str(duration),
+        "-c:v", "libx264", "-pix_fmt", "yuv420p",
+        "-preset", "fast", "-crf", "22",
+        "-an",
+        str(output_path),
+    ], capture_output=True, check=True)
+
+
+def _trim_or_loop_clip(clip_path: str, target_dur: float, output_path: str):
+    """裁剪 MG clip 到目标时长（不够则循环，太长则裁剪）"""
+    probe = subprocess.run([
+        "ffprobe", "-v", "error", "-show_entries", "format=duration",
+        "-of", "default=noprint_wrappers=1:nokey=1", clip_path,
+    ], capture_output=True, text=True)
+    clip_dur = float(probe.stdout.strip())
+
+    if abs(clip_dur - target_dur) < 0.3:
+        subprocess.run(["ffmpeg", "-y", "-i", clip_path,
+                        "-c", "copy", str(output_path)], capture_output=True, check=True)
+    elif clip_dur < target_dur:
+        subprocess.run([
+            "ffmpeg", "-y",
+            "-stream_loop", "-1",
+            "-i", clip_path,
+            "-t", str(target_dur),
+            "-c:v", "libx264", "-pix_fmt", "yuv420p",
+            "-preset", "fast", "-crf", "22",
+            str(output_path),
+        ], capture_output=True, check=True)
+    else:
+        subprocess.run(["ffmpeg", "-y", "-ss", "0", "-i", clip_path,
+                        "-t", str(target_dur), "-c", "copy",
+                        str(output_path)], capture_output=True, check=True)
+
+
+def _create_highlight_freeze(video_path: Path, seg: dict, output_path: str):
+    """B 段：提取一帧作为定格画面"""
+    seg_dur = seg["end"] - seg["start"]
+    freeze_time = (seg["start"] + seg["end"]) / 2
+
+    frame_path = str(Path(output_path).with_suffix(".png"))
+    subprocess.run([
+        "ffmpeg", "-y",
+        "-ss", str(freeze_time),
+        "-i", str(video_path),
+        "-vframes", "1", "-q:v", "2",
+        frame_path,
+    ], capture_output=True, check=True)
+
+    subprocess.run([
+        "ffmpeg", "-y",
+        "-loop", "1",
+        "-i", frame_path,
+        "-t", str(seg_dur),
+        "-c:v", "libx264", "-pix_fmt", "yuv420p",
+        "-preset", "fast", "-crf", "22",
+        str(output_path),
+    ], capture_output=True, check=True)
+
+
+def _create_opening_clip(video_path: str, output_dir: Path) -> Optional[str]:
+    """从视频中提取前 4 秒作为片头进球回放"""
+    probe = subprocess.run([
+        "ffprobe", "-v", "error", "-show_entries", "format=duration",
+        "-of", "default=noprint_wrappers=1:nokey=1", str(video_path),
+    ], capture_output=True, text=True)
+    video_dur = float(probe.stdout.strip())
+    opening_len = min(4.0, video_dur * 0.3)
+    opening_path = output_dir / "_opening.mp4"
+
+    subprocess.run([
+        "ffmpeg", "-y",
+        "-i", str(video_path),
+        "-t", str(opening_len),
+        "-c:v", "libx264", "-pix_fmt", "yuv420p",
+        "-preset", "fast", "-crf", "22",
+        "-an",
+        str(opening_path),
+    ], capture_output=True, check=True)
+
+    return str(opening_path) if opening_path.exists() else None
+
+
 def create_titled_video(
     video_path: str,
     audio_path: str,
@@ -146,6 +235,7 @@ def create_titled_video(
     match_info: str = "⚽ AI 角球战术解说",
     total_dur: Optional[float] = None,
     tacticai_predictions: Optional[List] = None,
+    mg_clips: Optional[Dict[int, str]] = None,  # NEW: {segment_index: mg_clip_path}
 ) -> str:
     """
     使用 ffmpeg 生成最终视频。
@@ -189,6 +279,73 @@ def create_titled_video(
     title_file = _filter_path(_write_textfile(match_info))
     end_file = _filter_path(_write_textfile("AI ⚽ 角球翻译官"))
 
+    if mg_clips:
+        # ====== NEW: Clip-based composition (MG + freeze-frame + real) ======
+        _TMP_DIR.mkdir(parents=True, exist_ok=True)
+        seg_clips = []
+
+        for i, seg in enumerate(timeline):
+            seg_dur = seg["end"] - seg["start"]
+            seg_out = str(_TMP_DIR / f"_seg_{i:03d}_{uuid.uuid4().hex[:6]}.mp4")
+
+            if seg.get("visual_type") == "ai_scene" and mg_clips and mg_clips.get(i):
+                # A 段: 使用 MG 动画替代原画面
+                _trim_or_loop_clip(mg_clips[i], seg_dur, seg_out)
+            elif seg.get("visual_type") == "highlight" and seg.get("visual"):
+                # B 段: 定格 + 高亮圈
+                _create_highlight_freeze(video_path, seg, seg_out)
+            else:
+                # 其他: 原视频片段
+                _trim_clip(video_path, seg["start"], seg_dur, seg_out)
+
+            seg_clips.append(seg_out)
+
+        # ====== Build opening clip ======
+        opening = _create_opening_clip(str(video_path), _TMP_DIR)
+
+        # ====== Concatenate all clips ======
+        concat_list = _TMP_DIR / "_concat_list.txt"
+        with open(concat_list, "w", encoding="utf-8") as f:
+            if opening:
+                f.write(f"file '{Path(opening).as_posix()}'\n")
+            for clip in seg_clips:
+                f.write(f"file '{Path(clip).as_posix()}'\n")
+
+        # Replace the direct filter approach with clip-based composition
+        temp_concat = _TMP_DIR / f"_concat_{uuid.uuid4().hex[:8]}.mp4"
+        subprocess.run([
+            "ffmpeg", "-y",
+            "-f", "concat", "-safe", "0",
+            "-i", str(concat_list),
+            "-c:v", "libx264", "-pix_fmt", "yuv420p",
+            "-preset", "medium", "-crf", "22",
+            str(temp_concat),
+        ], capture_output=True, check=True)
+
+        # Add audio to concatenated video
+        subprocess.run([
+            "ffmpeg", "-y",
+            "-i", str(temp_concat),
+            "-i", str(audio_path),
+            "-c:v", "copy",
+            "-c:a", "aac",
+            "-map", "0:v:0",
+            "-map", "1:a:0",
+            "-shortest",
+            "-movflags", "+faststart",
+            str(output_path),
+        ], capture_output=True, check=True)
+
+        # Cleanup
+        temp_concat.unlink(missing_ok=True)
+        for clip in seg_clips:
+            Path(clip).unlink(missing_ok=True)
+        if opening:
+            Path(opening).unlink(missing_ok=True)
+
+        return str(output_path)
+
+    # ====== EXISTING: Filter-based composition (unchanged) ======
     filters = []
 
     # 标题卡：前 2.5 秒
