@@ -5,7 +5,6 @@
 
 import json
 import subprocess
-import time
 from pathlib import Path
 from typing import Optional
 
@@ -33,6 +32,17 @@ def build_scene_variables(
     Returns:
         HyperFrames 变量 JSON dict
     """
+    if not predictions:
+        return {
+            "players": [],
+            "ball": {"x": 0, "y": 0},
+            "highlight": {"x": 0, "y": 0, "label": ""},
+            "arrow": {"from_x": 0, "from_y": 0, "to_x": 0, "to_y": 0, "label": ""},
+            "cards": [],
+            "title": "⚽ 角球战术分析",
+            "duration": max(3.0, segment_duration),
+        }
+
     to_px = mapping["to_px"]
     to_py = mapping["to_py"]
 
