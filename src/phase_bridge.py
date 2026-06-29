@@ -53,52 +53,109 @@ def tacticai_to_phase2(tacticai_json: dict) -> dict:
     }
 
 
-def sample_tacticai_output() -> dict:
-    """返回一个模拟的 TacticAI 输出，用于测试 Phase 2 管线。"""
+def sample_tacticai_output(corner_entry: Optional[dict] = None) -> dict:
+    """
+    返回一个依 entry 特征变化的模拟 TacticAI 输出。
+    虽然仍是模拟数据，但至少每个角球场景不同。
+    """
+    import hashlib
+
+    # 用 entry_id 做种子，保证同一场景始终一致
+    eid = corner_entry.get("id", "default") if corner_entry else "default"
+    seed = int(hashlib.md5(eid.encode()).hexdigest()[:8], 16)
+
+    # 根据 corner_type 调整球员分布
+    corner_type = (corner_entry or {}).get("corner_type", "in-swinging")
+
+    # 进攻球员位置偏移
+    if "left" in corner_type:
+        base_x, base_y = 55, 40  # 左侧角球，进攻偏左
+    elif "right" in corner_type:
+        base_x, base_y = 65, 40  # 右侧角球，进攻偏右
+    else:
+        base_x, base_y = 60, 38
+
+    rng = _RNG(seed)
+    predictions = []
+    # 6 个进攻球员
+    for i in range(6):
+        prob = max(0.01, round(rng() * 0.45, 2))
+        predictions.append({
+            "player_index": i,
+            "probability": prob,
+            "is_attacker": True,
+            "position": [
+                round(base_x + rng() * 15 - 5, 1),
+                round(base_y + rng() * 15 - 5, 1),
+            ],
+        })
+    # 6 个防守球员
+    for i in range(6, 12):
+        prob = max(0.01, round(rng() * 0.08, 2))
+        predictions.append({
+            "player_index": i,
+            "probability": prob,
+            "is_attacker": False,
+            "position": [
+                round(base_x + rng() * 20 - 5, 1),
+                round(base_y + rng() * 20 - 10, 1),
+            ],
+        })
+
+    # 人概率降序
+    predictions.sort(key=lambda p: p["probability"], reverse=True)
+    top = predictions[0]
+
     return {
         "success": True,
-        "predictions": [
-            {"player_index": i, "probability": p, "is_attacker": a, "position": pos}
-            for i, (p, a, pos) in enumerate([
-                (0.45, True, (65.0, 40.0)),
-                (0.20, True, (60.0, 35.0)),
-                (0.08, True, (55.0, 30.0)),
-                (0.03, True, (70.0, 45.0)),
-                (0.02, True, (58.0, 28.0)),
-                (0.01, True, (62.0, 42.0)),
-                (0.06, False, (68.0, 38.0)),
-                (0.05, False, (55.0, 50.0)),
-                (0.04, False, (72.0, 42.0)),
-                (0.03, False, (60.0, 55.0)),
-                (0.02, False, (65.0, 48.0)),
-                (0.01, False, (50.0, 45.0)),
-            ])
-        ],
-        "top_receiver": 0,
-        "top_probability": 0.45,
+        "predictions": predictions,
+        "top_receiver": top["player_index"],
+        "top_probability": top["probability"],
     }
 
 
-def format_for_prompt(phase2_input: dict, corner_entry: Optional[dict] = None) -> str:
-    """
-    将 Phase 2 输入格式化为 Prompt 可读的文本。
+class _RNG:
+    """简易确定性伪随机数生成器"""
+    def __init__(self, seed: int):
+        self.state = seed
+    def __call__(self) -> float:
+        self.state = (self.state * 1103515245 + 12345) & 0x7fffffff
+        return self.state / 0x7fffffff
 
-    作为底层描述文本输入给二人转 Prompt。
+
+def format_for_prompt(phase2_input: dict, corner_entry: Optional[dict] = None) -> dict:
     """
-    lines = []
+    返回两段式结构：
+      fact_section: 比赛事实 + 战术描述
+      tactic_section: TacticAI 彩蛋数据（可选引用）
+    """
+    fact_lines = []
     if corner_entry:
         match = corner_entry.get("match", "?")
         minute = corner_entry.get("minute", "?")
         scorer = corner_entry.get("goal_scorer", "?")
         note = corner_entry.get("tactical_note", "")
-        lines.append(f"比赛：{match}")
-        lines.append(f"时间：{minute}'")
-        lines.append(f"进球者：{scorer}")
+        fact_lines.append(f"比赛：{match}")
+        fact_lines.append(f"时间：{minute}'")
+        fact_lines.append(f"进球者：{scorer}")
         if note:
-            lines.append(f"战术描述：{note}")
+            fact_lines.append(f"战术描述：{note}")
 
-    lines.append(f"\n攻击球员：{phase2_input.get('attacking_players', '?')}人")
-    lines.append(f"防守球员：{phase2_input.get('defending_players', '?')}人")
-    lines.append(f"最可能接球概率：{phase2_input.get('top_receiver_probability', '?')}%")
+    tactic_lines = []
+    att = phase2_input.get("attacking_players", "?")
+    deff = phase2_input.get("defending_players", "?")
+    prob = phase2_input.get("top_receiver_probability", "?")
+    tactic_lines.append(f"攻击球员：{att}人")
+    tactic_lines.append(f"防守球员：{deff}人")
+    tactic_lines.append(f"最可能接球概率：{prob}%")
+    pos = phase2_input.get("top_receiver_position", [])
+    if pos:
+        tactic_lines.append(f"最可能接球位置：({pos[0]:.0f}, {pos[1]:.0f})")
+    dpos = phase2_input.get("top_defender_position", [])
+    if dpos:
+        tactic_lines.append(f"防守方关键位置：({dpos[0]:.0f}, {dpos[1]:.0f})")
 
-    return "\n".join(lines)
+    return {
+        "fact_section": "\n".join(fact_lines),
+        "tactic_section": "\n".join(tactic_lines),
+    }

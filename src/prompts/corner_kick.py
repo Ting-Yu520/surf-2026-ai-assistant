@@ -31,39 +31,84 @@ DUO_SYSTEM_PROMPT = """你是一个足球科普节目的编剧。你要写一段
 - "内旋球" = "球往球门方向转，守门员不敢碰"
 - "防守站位" = "防守球员怎么站岗"
 
+## 战术彩蛋
+A 可以偶尔引用战术分析数据来显摆专业度，如：
+"TacticAI 算出来这个球员有 45% 的概率接到球"
+但整段脚本最多用 2 次，重点是让故事有意思。
+
+**重要：对话里不要念坐标数字(65,40)这种东西，观众听不懂。
+用描述代替："你看他站的那个空档位置"**
+
+## 视频剪辑指令
+
+为了让视频画面跟上解说，每段 A 的台词后必须紧跟一行视觉指令：
+
+```
+A: （台词）
+##VISUAL## highlight pos=(x,y)
+```
+
+指令类型：
+- `highlight pos=(x,y)` — 在指定位置显示红色高亮圈（标注正在讨论的球员/区域）
+- `clear` — 清除之前的高亮
+
+坐标范围 (0-100, 0-100)，根据下面"战术彩蛋"里的位置数据填写。
+如果当前台词没有对应坐标，就写 `##VISUAL## clear`。
+
 ## 输出格式
 
 纯文本，每行格式：
 A: （台词）
+##VISUAL## highlight pos=(x,y) 或 ##VISUAL## clear
 B: （台词）
+##VISUAL## clear
 
-不要旁白，不要场景描述，只要对话。"""
+不要旁白，不要场景描述，只要对话和视觉指令。"""
 
-DUO_USER_TEMPLATE = """请根据下面的角球新闻，写一段双口相声科普脚本。
+DUO_USER_TEMPLATE = """请根据下面的足球比赛信息，写一段双口相声科普脚本。
 
-## 角球新闻
-{article}
+## 比赛事实
+{fact_section}
+
+## 战术彩蛋（可选）
+下面这些战术分析数据 A 可偶尔引用：
+{tactic_section}
 
 ## 要求
 - 4-6 轮对话
 - A 上来先卖弄知识
 - B 一脸懵逼，逼 A 解释人话
 - 最后 B 表示懂了
-- 纯对话，不要叙述"""
+- 每段 A 台词后紧跟 ##VISUAL## 视觉指令
+- 对话里不要出现坐标数字"""
 
 
-def build_duo_prompt(article_text: str) -> tuple[str, str]:
-    return DUO_SYSTEM_PROMPT, DUO_USER_TEMPLATE.format(article=article_text)
+def build_duo_prompt(formatted: dict) -> tuple[str, str]:
+    return (
+        DUO_SYSTEM_PROMPT,
+        DUO_USER_TEMPLATE.format(
+            fact_section=formatted["fact_section"],
+            tactic_section=formatted["tactic_section"],
+        ),
+    )
 
 
-def parse_duo_output(output: str) -> list[str]:
-    """解析双口相声输出为逐句列表"""
-    lines = []
+def parse_duo_output(output: str) -> list[dict]:
+    """解析双口相声输出为带视觉指令的结构化列表"""
+    items = []
+    current = None
     for line in output.strip().split('\n'):
         line = line.strip()
         if not line:
             continue
-        # 跳过可能的元信息
         if line.startswith('A:') or line.startswith('B:'):
-            lines.append(line)
-    return lines
+            if current:
+                items.append(current)
+            speaker = line[0]
+            text = line[2:].strip()
+            current = {"speaker": speaker, "text": text, "visual": None}
+        elif line.startswith('##VISUAL##') and current:
+            current["visual"] = line.replace('##VISUAL##', '').strip()
+    if current:
+        items.append(current)
+    return items

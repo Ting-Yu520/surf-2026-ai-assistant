@@ -1,17 +1,19 @@
 """
-端到端流水线 v5 — 二人转科普版本
+端到端流水线 v6 — 二人转科普 + ffmpeg 视频剪辑
 
-让 AI 生成双口相声风格的角球科普解说。
+让 AI 生成双口相声风格的角球科普解说，逐句 TTS 获取时间轴，
+用 ffmpeg 按时间轴叠加彩色边框、角色角标，输出最终视频。
 """
 
 import time, logging, re, requests, json
 from html import unescape
+from typing import Optional
 from anthropic import Anthropic
 from config import (
     DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, DEEPSEEK_API_KEY,
     API_TIMEOUT, MAX_TOKENS, TEMPERATURE, OUTPUT_DIR,
 )
-from tts_client import generate_audio
+from tts_client import generate_audio, generate_timeline_audio, concat_audio_segments
 from prompts.corner_kick import DUO_SYSTEM_PROMPT, DUO_USER_TEMPLATE
 
 logging.basicConfig(level=logging.INFO)
@@ -21,18 +23,23 @@ logger = logging.getLogger(__name__)
 def process_corner_kick(
     video_path: str = None,
     article_url: str = None,
-    article_text: str = None,
+    formatted: Optional[dict] = None,
     output_prefix: str = "",
+    corner_entry: Optional[dict] = None,
+    tacticai_predictions: Optional[list] = None,
 ) -> dict:
-    """处理角球视频——二人转科普版本。"""
+    """处理角球视频——二人转科普 + 视频剪辑版本。"""
 
     t0 = time.time()
     result = {}
     prefix = output_prefix + "_" if output_prefix else ""
 
-    # ====== Step 1: 获取文章描述 ======
-    if article_text:
-        facts = article_text
+    # ====== Step 1: 获取输入数据 ======
+    if formatted:
+        section_text = (
+            f"## 比赛事实\n{formatted.get('fact_section', '')}\n\n"
+            f"## 战术彩蛋（可选）\n{formatted.get('tactic_section', '')}"
+        )
     elif article_url:
         r = requests.get(article_url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15)
         r.encoding = 'utf-8'
@@ -45,12 +52,13 @@ def process_corner_kick(
             clean = re.sub(r'<[^>]+>', '', p)
             clean = unescape(clean).strip()
             if clean: body += clean + '\n'
-        facts = f"标题：{title}\n内容：{body}"
+        formatted = {"fact_section": f"标题：{title}", "tactic_section": body}
+        section_text = f"## 比赛事实\n{formatted['fact_section']}\n\n## 战术彩蛋\n{formatted['tactic_section']}"
         result['article'] = {'title': title, 'body': body}
     else:
-        raise ValueError("需要 article_url 或 article_text")
+        raise ValueError("需要 formatted 或 article_url")
 
-    result['facts'] = facts
+    result['formatted'] = formatted
     logger.info(f"Step 1 ✓")
 
     # ====== Step 2: 二人转生成 ======
@@ -59,39 +67,68 @@ def process_corner_kick(
     response = client.messages.create(
         model=DEEPSEEK_MODEL, max_tokens=MAX_TOKENS, temperature=0.85,
         system=DUO_SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": DUO_USER_TEMPLATE.format(article=facts)}],
+        messages=[{
+            "role": "user",
+            "content": DUO_USER_TEMPLATE.format(
+                fact_section=formatted.get("fact_section", ""),
+                tactic_section=formatted.get("tactic_section", ""),
+            ),
+        }],
     )
     script = '\n'.join(b.text for b in response.content if hasattr(b, 'text'))
     result['script'] = script
     logger.info(f"Step 2 ✓: {len(script)} chars")
 
-    # ====== Step 3: 合成完整解说（A+B对话合并为叙事） ======
-    # 把对话转成自然语音解说文本（二人转对白）
-    lines = [l for l in script.split('\n') if l.strip()]
-    # 改写成叙事式解说（用于 TTS 单声道）
-    narration = "你听我来给你讲讲这个角球啊！\n"
-    for l in lines:
-        if l.startswith('A:'):
-            narration += l[2:].strip() + " "
-        elif l.startswith('B:'):
-            pass  # B 的话省略，让叙事保持连贯
+    # ====== Step 3: 解析脚本为 A/B 逐句段 ======
+    from video_overlay import parse_script
+    segments = parse_script(script)
+    if not segments:
+        # 如果 LLM 输出格式不对，加退路
+        segments = [{"speaker": "A", "text": script}]
+    logger.info(f"Step 3 ✓: 解析出 {len(segments)} 句对话")
 
-    result['narration'] = narration
-    logger.info(f"Step 3 ✓: 对话合成叙事 {len(narration)} chars")
+    # ====== Step 4: 逐句 TTS ======
+    audio_seg_dir = OUTPUT_DIR / f"{prefix}audio_segs"
+    audio_seg_dir.mkdir(exist_ok=True)
 
-    # ====== Step 4: TTS ======
+    tts_segments = generate_timeline_audio(
+        [{"narration": seg["text"]} for seg in segments],
+        str(audio_seg_dir),
+    )
+
+    # 合并音频
     audio_path = str(OUTPUT_DIR / f"{prefix}narration.mp3")
-    generate_audio(narration, audio_path)
+    concat_audio_segments(tts_segments, audio_path)
     result['audio_path'] = audio_path
-    logger.info(f"Step 4 ✓")
+    logger.info(f"Step 4 ✓: {len(tts_segments)} 段 TTS")
+
+    # ====== Step 4b: 组装时间轴 ======
+    from video_overlay import build_timeline
+    timeline = build_timeline(segments, [s["actual_duration_sec"] for s in tts_segments])
+    result['timeline'] = timeline
+    logger.info(f"Step 4b ✓: 时间轴 {timeline[-1]['end']:.1f}s" if timeline else "Step 4b ✓: 空时间轴")
 
     # ====== Step 5: 视频合成 ======
     if video_path:
-        from video_overlay import create_simple_video
+        from video_overlay import create_titled_video
+        match_info = ""
+        if corner_entry:
+            match_info = f"{corner_entry.get('match','')} — {corner_entry.get('goal_scorer','')} ({corner_entry.get('minute','')}')"
         output_video = str(OUTPUT_DIR / f"{prefix}corner_story.mp4")
-        create_simple_video(video_path, audio_path, output_video)
+        total_dur = timeline[-1]["end"] if timeline else None
+        create_titled_video(
+            video_path=video_path,
+            audio_path=audio_path,
+            timeline=timeline,
+            output_path=output_video,
+            match_info=match_info or "⚽ AI 角球战术解说",
+            total_dur=total_dur,
+            tacticai_predictions=tacticai_predictions,
+        )
         result['output_video'] = output_video
         logger.info(f"Step 5 ✓: {output_video}")
+    else:
+        logger.info("Step 5 ⏭: 无视频源，跳过")
 
     result['elapsed'] = time.time() - t0
     return result

@@ -64,7 +64,7 @@ selected = st.selectbox(
     help="从 2026 世界杯角球数据集中选择一个"
 )
 
-eid = f"wc2026-corner-{selected.split(' #')[1].split(' ')[0] if '#' in selected else selected.split('—')[0].strip().split('#')[1]}"
+eid = f"wc2026-corner-{selected.split('#')[1].split()[0]}"
 entry = next(e for e in entries if e["id"] == eid)
 
 st.divider()
@@ -92,8 +92,8 @@ with col1:
     st.markdown("#### 🔮 TacticAI 角球分析")
     st.caption("接收者预测 + 攻防球员概率分布")
 
-    # 生成模拟 TacticAI 输出
-    tacticai_out = sample_tacticai_output()
+    # 生成模拟 TacticAI 输出（按 entry 变化）
+    tacticai_out = sample_tacticai_output(entry)
     phase2_input = tacticai_to_phase2(tacticai_out)
 
     # 展示 Top-3 预测
@@ -131,19 +131,31 @@ with col2:
     st.caption("专业数据 → 二人转相声 → AI 配音")
 
     if st.button("🎙️ 生成二人转科普解说", use_container_width=True, type="primary"):
-        # 构造文章底本
-        article_text = format_for_prompt(phase2_input, entry)
+        # 构造两段式 Prompt 数据
+        formatted = format_for_prompt(phase2_input, entry)
 
         with st.status("管线运行中...", expanded=True) as status:
             st.write("① TacticAI 分析完成 → 数据已加载")
             st.write("② 二人转 Prompt 生成中...")
 
-            result = process_corner_kick(article_text=article_text, output_prefix=f"demo_{eid}")
+            result = process_corner_kick(
+                formatted=formatted,
+                output_prefix=f"demo_{eid}",
+                video_path=video_path,
+                corner_entry=entry,
+                tacticai_predictions=tacticai_out.get("predictions"),
+            )
 
             st.write(f"③ 解说完成 ({len(result.get('script',''))} 字)")
-            st.write(f"④ TTS 配音完成 → 音频已就绪")
+            st.write(f"④ TTS 配音完成 + 视频合成中...")
 
             status.update(label="✅ 管线运行完毕！", state="complete")
+
+        # 视频优先展示
+        output_video = result.get("output_video")
+        if output_video:
+            st.markdown("#### 📺 最终科普视频")
+            st.video(output_video)
 
         # 显示二人转脚本
         st.markdown("#### 📝 二人转脚本")
@@ -158,17 +170,11 @@ with col2:
                     html_lines.append(f'<p class="duo-b">🤔 小白：{l[2:].strip()}</p>')
             st.markdown(f'<div class="story-card">{"".join(html_lines)}</div>', unsafe_allow_html=True)
 
-        # 音频
+        # 音频（下载备用）
         audio_path = result.get("audio_path")
         if audio_path:
-            st.markdown("#### 🎧 AI 配音音频")
+            st.markdown("#### 🎧 AI 配音音频（备用下载）")
             st.audio(audio_path)
-
-        # 视频
-        output_video = result.get("output_video")
-        if output_video:
-            st.markdown("#### 📺 最终科普视频")
-            st.video(output_video)
 
     else:
         st.info("👈 左侧选择角球场景，点击按钮生成")
