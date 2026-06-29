@@ -279,7 +279,7 @@ def create_titled_video(
     title_file = _filter_path(_write_textfile(match_info))
     end_file = _filter_path(_write_textfile("AI ⚽ 角球翻译官"))
 
-    if mg_clips:
+    if mg_clips and any(mg_clips.values()):
         # ====== NEW: Clip-based composition (MG + freeze-frame + real) ======
         _TMP_DIR.mkdir(parents=True, exist_ok=True)
         seg_clips = []
