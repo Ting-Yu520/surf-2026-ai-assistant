@@ -1,0 +1,6 @@
+# Agent 1: VideoAnalyzer — VLM keyframe analysis
+model: "gemini-2.5-flash"
+fps: 1
+max_frames: 10
+resolution: [1920, 1080]
+timeout: 30

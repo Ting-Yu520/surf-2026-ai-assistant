@@ -1,0 +1,4 @@
+# SURF-2026 Production Environment
+log_level: INFO
+output_dir: outputs/
+parallel: true

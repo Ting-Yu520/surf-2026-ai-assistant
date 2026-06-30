@@ -1,0 +1,4 @@
+# SURF-2026 Development Environment
+log_level: DEBUG
+output_dir: outputs/
+parallel: false
