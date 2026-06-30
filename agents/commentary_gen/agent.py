@@ -27,12 +27,7 @@ class CommentaryGenerator(BaseAgent):
         system_prompt = self._load_prompt("system.txt")
         user_message = self._build_user_message(fact_section, tactic_section)
 
-        api_key = self.config.get("api_key", "")
-        if not api_key:
-            return AgentOutput(
-                status="error", data={}, agent_name="commentary_gen",
-                error="No API key configured (set DEEPSEEK_API_KEY in secrets.env)",
-            )
+        api_key = self.config.get("deepseek_api_key", "")
 
         client = create_client(
             base_url=self.config["base_url"],

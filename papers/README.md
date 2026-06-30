@@ -10,18 +10,18 @@
 
 ## 关键论文（待获取 PDF）
 
-| # | Paper | Venue | Year | Priority |
-|---|-------|-------|------|----------|
-| 1 | TacticAI: an AI assistant for football tactics | Nature Comms | 2024 | 🔴 P0 |
-| 2 | TimeSoccer: End-to-End MLLM for Soccer Commentary | ACM Multimedia | 2025 | 🟡 P1 |
-| 3 | SoccerComment: MLLM + RAG in Soccer Commentary | WACV | 2025 | 🟡 P1 |
-| 4 | MatchTime: Automatic Soccer Game Commentary | EMNLP (Oral) | 2024 | 🟢 P2 |
-| 5 | MatchVision + SoccerReplay-1988 | CVPR | 2025 | 🟡 P1 |
-| 6 | SportsBuddy: AI Sports Video Storytelling | IEEE PacificVis | 2025 | 🟡 P1 |
-| 7 | Sportify: QA + Personified Narratives for Sports | IEEE TVCG | 2025 | 🟢 P2 |
-| 8 | Expert Comment Generation (Skill-Level-Aware) | Sensors | 2025 | 🟢 P2 |
-| 9 | LLM Narrative Gamification for XAI | CHI EA | 2025 | 🟢 P2 |
-| 10 | LLM + VR Exergame Data Visualization | CHI EA | 2025 | 🟢 P2 |
+| # | Paper | Year | Priority | Download |
+|---|-------|------|----------|----------|
+| 1 | TacticAI (Nature Comms) | 2024 | 🔴 P0 | [📥 PDF](https://www.nature.com/articles/s41467-024-45965-x.pdf) |
+| 2 | TimeSoccer (ACM MM) | 2025 | 🔴 P0 | [📥 arXiv](https://arxiv.org/pdf/2504.17365) |
+| 3 | SoccerComment (WACV) | 2025 | 🟡 P1 | [📥 CVF](https://openaccess.thecvf.com/content/WACV2025/html/Li_Multi-Modal_Large_Language_Model_with_RAG_Strategies_in_Soccer_Commentary_WACV_2025_paper.html) |
+| 4 | MatchTime (EMNLP Oral) | 2024 | 🔴 P0 | [📥 arXiv](https://arxiv.org/pdf/2406.18530) |
+| 5 | MatchVision (CVPR) | 2025 | 🟡 P1 | [📥 IEEE](https://ieeexplore.ieee.org/document/11092794) |
+| 6 | SportsBuddy (PacificVis) | 2025 | 🟡 P1 | [📥 arXiv](https://arxiv.org/pdf/2502.08621) |
+| 7 | Sportify (TVCG) | 2025 | 🟢 P2 | [📥 PubMed](https://pubmed.ncbi.nlm.nih.gov/39255116/) |
+| 8 | Expert Comment (Sensors) | 2025 | 🟢 P2 | [📥 MDPI](https://doi.org/10.3390/s25020447) |
+| 9 | XAI Narrative (CHI EA) | 2025 | 🟢 P2 | [📥 ACM](https://dl.acm.org/doi/10.1145/3706599.3719795) |
+| 10 | VR Exergame (CHI EA) | 2025 | 🟢 P2 | [📥 ACM](https://dl.acm.org/doi/10.1145/3706599.3720165) |
 
 ## 分析文档
 
@@ -29,7 +29,9 @@
 
 ## 论文获取方法
 
-由于网络限制（arXiv / Nature / ACL Anthology 均被阻止），PDF 获取建议：
-1. 在校园网内下载并放入此目录
-2. 命名规则：`YYYY_Venue_ShortTitle_FirstAuthor_Affiliation.pdf`
-3. 更新本 README 的"已有 PDF"表格
+⚠️ 企业网络封锁了 arXiv / Nature / ACL / IEEE / HuggingFace。请在**校园网或家庭网络**下载：
+
+1. 点击上方"📥"链接下载 PDF
+2. 放入此 `papers/` 目录，命名规则：`YYYY_Venue_ShortTitle_FirstAuthor_Affiliation.pdf`
+3. 更新上方"已有 PDF"表格并移入对应行
+4. commit + push

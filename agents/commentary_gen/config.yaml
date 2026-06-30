@@ -1,6 +1,7 @@
 # Agent 3: CommentaryGen — LLM duo-commentary configuration
 model: "deepseek-v4-pro"
 base_url: "https://api.deepseek.com/anthropic"
+deepseek_api_key: ""
 max_tokens: 2048
 temperature: 0.85
-timeout: 60
+timeout: 120
