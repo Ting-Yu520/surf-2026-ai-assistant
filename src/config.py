@@ -12,20 +12,28 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent.parent / ".env")
 
 # ============================================================
-# VLM 配置 — Gemini 1.5 Flash (免费)
+# VLM 配置 — 已迁移至 DeepSeek (2026-06-30)
+# ⚠️ LEGACY: 这些变量保留用于 src/pipeline.py 向后兼容
+# 新代码使用 agents/video_analyzer/config.yaml + core/llm_client.py
 # ============================================================
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-GEMINI_TIMEOUT = 120
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", os.getenv("DEEPSEEK_API_KEY", ""))
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "deepseek-v4-flash")
+GEMINI_TIMEOUT = 60
 
 # ============================================================
-# LLM 配置 — DeepSeek V4 Pro (文本生成)
+# LLM 配置 — DeepSeek (Anthropic 兼容端点)
+# ⚠️ LEGACY: 新 agent 架构优先使用 agents/*/config.yaml
+# 此文件仅供 src/pipeline.py 等旧代码路径使用
 # ============================================================
 DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/anthropic")
-DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-v4-pro")
+DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-v4-flash")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 API_TIMEOUT = 60
-MAX_TOKENS = 2048
+# max_tokens per model:
+#   deepseek-v4-flash: 2048 (no thinking chain)
+#   deepseek-v4-pro:   4096 (thinking + output)
+# Override via DEEPSEEK_MAX_TOKENS env var
+MAX_TOKENS = int(os.getenv("DEEPSEEK_MAX_TOKENS", "2048"))
 TEMPERATURE = 0.7
 
 # ============================================================
