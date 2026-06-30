@@ -22,7 +22,7 @@ class AgentOutput:
 
 
 class BaseAgent(ABC):
-    """Every Agent must subclass this. Only override load_config() and run()."""
+    """Every Agent must subclass this. Override load_config(), run(), and validate()."""
 
     def __init__(self, config_override: dict | None = None):
         self.config = self.load_config()
@@ -35,7 +35,7 @@ class BaseAgent(ABC):
         ...
 
     @abstractmethod
-    def run(self, input: AgentInput) -> AgentOutput:
+    def run(self, agent_input: AgentInput) -> AgentOutput:
         """Single entry point: input → process → output."""
         ...
 
