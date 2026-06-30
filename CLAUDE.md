@@ -2,7 +2,52 @@
 
 **Generative HCI for Sports Analytics**：用 LLM 将足球战术数据转化为新手可理解的趣味叙述。
 
-详见 [[surf-2026-project-init]]、[[surf-2026-architecture]]。
+详见 [[surf-2026-project-init]]、[[surf-2026-architecture]]、[[surf-2026-opc-paper]]。
+
+---
+
+## 当前 Sprint（7/20 汇报）
+
+**目标：** Demo v3 → 产品级原型
+**核心：** 多模态升级（对标 OPC 论文三层架构）
+**Sprint 计划详见：** [[surf-2026-sprint-jul20]]
+
+关键升级：
+
+- VLM (Gemini) 从视频自动提取战术信息（输入多模态）
+- MG 动画 + 视频高亮 + TTS（输出多模态）
+- 真实 Phase 1 数据替换模拟数据
+- UI 产品化 + 视频上传 + 批量处理
+
+## 多模态架构（对标 OPC 论文）
+
+```
+Model & Algorithm Support Layer
+  ├── VLM (Gemini/GPT-4o)     ← 视频帧 → 战术 JSON
+  ├── LLM (DeepSeek V4)       ← Prompt 引擎 → 科普脚本
+  ├── TTS (Edge TTS)          ← 脚本 → 语音
+  └── CV (ffmpeg/MG)          ← 动画 + 视频合成
+
+Multi-Agent Execution Layer
+  ├── Video Analysis Agent    ← VLM 关键帧分析
+  ├── Tactical Extract Agent  ← Phase 1 工具输出
+  ├── Commentary Agent        ← 二人转 Prompt
+  ├── Voice Agent             ← TTS 配音
+  └── Fusion Agent            ← 视频合成 + QC
+
+Application Layer
+  └── Streamlit UI            ← 上传/查看/下载
+```
+
+## 双人团队
+
+| 角色 | 负责 |
+|------|------|
+| 你（大三） | `pipeline.py` / `prompts/` / `video_overlay.py` / `tts_client.py` / `config.py` |
+| 搭档（大一） | `app.py` / `scripts/` / `tests/` / `docs/` |
+
+接口：`process_corner_kick()` —— 搭档通过它调管线，不修改内部。
+完整协议：[[surf-2026-collaboration]]
 
 ---
 

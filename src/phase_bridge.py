@@ -212,9 +212,10 @@ def build_field_mapping(predictions: list[dict], canvas_width: int = 1280, canva
     x_min, x_max = min(xs), max(xs)
     y_min, y_max = min(ys), max(ys)
 
-    # 画面上的球场绘制区域 — 这是 UI 布局常量，不是数据常量
-    FIELD_LEFT, FIELD_RIGHT = 600, int(canvas_width * 0.92)
-    FIELD_TOP, FIELD_BOTTOM = 140, int(canvas_height * 0.86)
+    # 画面上的球场绘制区域 — UI 布局常量，不是数据常量
+    # 使用画面主体区域（留出边距给标题和卡片），而非仅右半部分
+    FIELD_LEFT, FIELD_RIGHT = 80, int(canvas_width * 0.94)     # 80–1203 (1123px 宽)
+    FIELD_TOP, FIELD_BOTTOM = 100, int(canvas_height * 0.88)   # 100–634 (534px 高)
 
     x_range = (x_max - x_min) or 1
     y_range = (y_max - y_min) or 1

@@ -40,3 +40,9 @@ data/videos/*.mp4
 
 # Logs
 *.log
+
+# Brainstorming artifacts (tool-generated)
+.superpowers/
+
+# Secrets (actual keys, not template)
+configs/secrets.env

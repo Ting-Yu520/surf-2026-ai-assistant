@@ -60,7 +60,7 @@ def run_full_demo(entry_id: str = "wc2026-corner-021"):
     # Phase 1 — TacticAI
     # ================================================
     print("\n--- [1/3] TacticAI 推理 ---")
-    checkpoint = "/mnt/d/ClaudeWorkspace/phase1/tools/tactic-ai-recreation/models/checkpoints/best_model.pth"
+    checkpoint = "/mnt/d/ClaudeWorkspace/projects/surf-2026-ai-tactical-assistant/phase1/tools/tactic-ai-recreation/models/checkpoints/best_model.pth"
     tacticai = TacticAIInference(checkpoint_path=checkpoint)
     analysis = tacticai.predict_from_corner_entry(corner_entry)
 

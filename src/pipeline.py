@@ -109,9 +109,48 @@ def process_corner_kick(
             ),
         }],
     )
-    script = '\n'.join(b.text for b in response.content if hasattr(b, 'text'))
+    # DeepSeek Anthropic-compatible API may return content in different formats.
+    # Try .text first, then fall back to other attributes.
+    script_parts = []
+    for b in response.content:
+        if hasattr(b, 'text') and b.text:
+            script_parts.append(b.text)
+        elif hasattr(b, 'content') and b.content:
+            # Some proxy implementations use .content instead of .text
+            script_parts.append(b.content if isinstance(b.content, str) else str(b.content))
+        else:
+            logger.warning(f"Step 2: Unexpected content block type={type(b).__name__}, "
+                           f"attrs={[a for a in dir(b) if not a.startswith('_')]}")
+    script = '\n'.join(script_parts)
+
+    # Fallback: if LLM returned empty, log raw response for debugging
+    if not script.strip():
+        raw_dump = repr(response.content)[:500]
+        logger.error(f"Step 2: LLM returned empty script! Raw response (first 500 chars): {raw_dump}")
+        # Use the previous successful script if available (idempotent cache)
+        script_cache = OUTPUT_DIR / f"{prefix}script.txt"
+        if not script_cache.exists():
+            # Try to find any cached script for this corner entry
+            corner_id = corner_entry.get("id", "") if corner_entry else ""
+            for candidate in sorted(OUTPUT_DIR.glob("*script.txt"), key=lambda p: p.stat().st_mtime, reverse=True):
+                cid_hyphen = corner_id
+                cid_underscore = corner_id.replace("-", "_")
+                if cid_hyphen in candidate.stem or cid_underscore in candidate.stem:
+                    script_cache = candidate
+                    break
+        if script_cache.exists():
+            script = script_cache.read_text(encoding="utf-8")
+            logger.warning(f"Step 2: Loaded cached script ({len(script)} chars) from {script_cache}")
+        else:
+            logger.error("Step 2: No cached script available — output will be minimal")
+
     result['script'] = script
     logger.info(f"Step 2 ✓: {len(script)} chars")
+
+    # Cache successful scripts for recovery from transient API failures
+    if script.strip():
+        script_cache = OUTPUT_DIR / f"{prefix}script.txt"
+        script_cache.write_text(script, encoding="utf-8")
 
     # ====== Step 3: 解析脚本为 A/B 逐句段 ======
     from video_overlay import parse_script
@@ -188,7 +227,7 @@ def process_corner_kick(
             output_path=output_video,
             match_info=match_info or "⚽ AI 角球战术解说",
             total_dur=total_dur,
-            tacticai_predictions=tacticai_predictions,
+            tacticai_predictions=predictions_data.get("predictions", []) if predictions_data else None,
             mg_clips=mg_clips,
         )
         result['output_video'] = output_video

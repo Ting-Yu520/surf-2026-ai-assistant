@@ -119,7 +119,7 @@ class TacticAIInference:
         if checkpoint_path is None:
             candidates = [
                 "models/checkpoints/best_model.pth",
-                "/mnt/d/ClaudeWorkspace/phase1/tools/tactic-ai-recreation/models/checkpoints/best_model.pth",
+                "/mnt/d/ClaudeWorkspace/projects/surf-2026-ai-tactical-assistant/phase1/tools/tactic-ai-recreation/models/checkpoints/best_model.pth",
             ]
             for c in candidates:
                 if Path(c).exists():

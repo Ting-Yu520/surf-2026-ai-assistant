@@ -30,14 +30,27 @@ _TMP_DIR = Path(__file__).parent.parent / "outputs" / "_ffmpeg_assets"
 _TMP_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def _field_to_pixel(field_x: float, field_y: float) -> tuple:
+def _field_to_pixel(field_x: float, field_y: float,
+                    data_x_range=(0, 100), data_y_range=(0, 100)) -> tuple:
     """
-    将 TacticAI 球场坐标 (0-100) 映射到视频像素坐标 (1280x720)。
-    TacticAI 模拟数据的坐标范围约 x:50-75, y:25-55（禁区内区域）。
+    将 TacticAI 球场坐标映射到视频像素坐标 (1280x720)。
+
+    自适应数据范围：根据实际球员坐标的 min/max 线性映射到画面主体区域。
+    Fallback: 如果未提供 data range，使用默认 0-100 → 全画面映射。
     """
-    px = int(200 + field_x * 10)
-    py = int(100 + field_y * 8)
-    # 裁剪到画面内
+    # 画面主体区域（留边距给 UI 元素）
+    VIEW_LEFT, VIEW_RIGHT = 120, 1160
+    VIEW_TOP, VIEW_BOTTOM = 80, 640
+
+    x_min, x_max = data_x_range
+    y_min, y_max = data_y_range
+
+    x_range = (x_max - x_min) or 1
+    y_range = (y_max - y_min) or 1
+
+    px = int(VIEW_LEFT + (field_x - x_min) / x_range * (VIEW_RIGHT - VIEW_LEFT))
+    py = int(VIEW_TOP + (field_y - y_min) / y_range * (VIEW_BOTTOM - VIEW_TOP))
+
     px = max(0, min(1280, px))
     py = max(0, min(720, py))
     return px, py
@@ -45,7 +58,7 @@ def _field_to_pixel(field_x: float, field_y: float) -> tuple:
 
 def parse_script(script: str) -> List[Dict]:
     """
-    解析 LLM 输出，返回 [{speaker, text, visual}, ...]
+    解析 LLM 输出，返回 [{speaker, text, visual, visual_type}, ...]
     支持 ##VISUAL## 视觉指令
     """
     segments = []
@@ -62,9 +75,19 @@ def parse_script(script: str) -> List[Dict]:
                 "speaker": m.group(1),
                 "text": m.group(2).strip(),
                 "visual": None,
+                "visual_type": None,
             }
         elif line.startswith('##VISUAL##') and current:
-            current["visual"] = line.replace('##VISUAL##', '').strip()
+            visual = line.replace('##VISUAL##', '').strip()
+            current["visual"] = visual
+            if visual == 'ai_scene':
+                current["visual_type"] = 'ai_scene'
+            elif visual == 'clear':
+                current["visual_type"] = 'clear'
+            elif visual.startswith('highlight'):
+                current["visual_type"] = 'highlight'
+            else:
+                current["visual_type"] = None
     if current:
         segments.append(current)
     return segments
@@ -140,17 +163,38 @@ def _build_zoompan(total_dur: float, fps: int = 25) -> str:
 
 
 def _trim_clip(video_path: Path, start: float, duration: float, output_path: str):
-    """从视频中裁剪一段，无音频"""
-    subprocess.run([
-        "ffmpeg", "-y",
-        "-ss", str(start),
-        "-i", str(video_path),
-        "-t", str(duration),
-        "-c:v", "libx264", "-pix_fmt", "yuv420p",
-        "-preset", "fast", "-crf", "22",
-        "-an",
-        str(output_path),
-    ], capture_output=True, check=True)
+    """从视频中裁剪一段（自动循环如果 start 超出视频时长），无音频"""
+    # 先获取视频时长
+    probe = subprocess.run([
+        "ffprobe", "-v", "error", "-show_entries", "format=duration",
+        "-of", "default=noprint_wrappers=1:nokey=1", str(video_path),
+    ], capture_output=True, text=True)
+    video_dur = float(probe.stdout.strip())
+
+    # 如果 start 超出视频时长，循环视频
+    if start >= video_dur:
+        subprocess.run([
+            "ffmpeg", "-y",
+            "-stream_loop", "-1",
+            "-i", str(video_path),
+            "-ss", str(start % video_dur if video_dur > 0 else 0),
+            "-t", str(duration),
+            "-c:v", "libx264", "-pix_fmt", "yuv420p",
+            "-preset", "fast", "-crf", "22",
+            "-an",
+            str(output_path),
+        ], capture_output=True, check=True)
+    else:
+        subprocess.run([
+            "ffmpeg", "-y",
+            "-ss", str(start),
+            "-i", str(video_path),
+            "-t", str(duration),
+            "-c:v", "libx264", "-pix_fmt", "yuv420p",
+            "-preset", "fast", "-crf", "22",
+            "-an",
+            str(output_path),
+        ], capture_output=True, check=True)
 
 
 def _trim_or_loop_clip(clip_path: str, target_dur: float, output_path: str):
@@ -228,23 +272,28 @@ def _create_opening_clip(video_path: str, output_dir: Path) -> Optional[str]:
     return str(opening_path) if opening_path.exists() else None
 
 
-def _add_segment_overlays(input_clip: str, seg: dict, output_path: str, font_rel: str):
+def _add_segment_overlays(input_clip: str, seg: dict, output_path: str, font_rel: str,
+                          top_attacker_pos=None, data_x_range=(0, 100), data_y_range=(0, 100)):
     """给单个段 clip 叠加：角标、边框、高亮圈、字幕"""
     color = "red" if seg["speaker"] == "A" else "blue"
     label = "懂哥" if seg["speaker"] == "A" else "小白"
     marker = "●" if seg["speaker"] == "A" else "○"
-    text = seg.get("text", "")[:30]  # 截断长文本
+    text = (seg.get("text", "") or "").strip()[:50]  # 截断长文本，处理 None/空
 
     label_file = _filter_path(_write_textfile(f"{marker} {label}"))
-    subtitle_file = _filter_path(_write_textfile(text))
+    # 空文本会导致 ffmpeg drawtext 失败 → 整个 overlay 回退到 raw clip
+    # 用空格占位避免空文件
+    subtitle_text = text if text else " "
+    subtitle_file = _filter_path(_write_textfile(subtitle_text))
 
     filters = []
 
-    # 四边彩色边框
-    filters.append(f"drawbox=x=0:y=0:w=1280:h=4:color={color}@0.8:t=fill")
-    filters.append(f"drawbox=x=0:y=716:w=1280:h=4:color={color}@0.8:t=fill")
-    filters.append(f"drawbox=x=0:y=0:w=4:h=720:color={color}@0.8:t=fill")
-    filters.append(f"drawbox=x=1276:y=0:w=4:h=720:color={color}@0.8:t=fill")
+    # 四边彩色边框（6px 更醒目）
+    bw = 6
+    filters.append(f"drawbox=x=0:y=0:w=1280:h={bw}:color={color}@0.85:t=fill")
+    filters.append(f"drawbox=x=0:y={720-bw}:w=1280:h={bw}:color={color}@0.85:t=fill")
+    filters.append(f"drawbox=x=0:y=0:w={bw}:h=720:color={color}@0.85:t=fill")
+    filters.append(f"drawbox=x={1280-bw}:y=0:w={bw}:h=720:color={color}@0.85:t=fill")
 
     # 角标（左上角）
     filters.append(
@@ -253,23 +302,32 @@ def _add_segment_overlays(input_clip: str, seg: dict, output_path: str, font_rel
         f"fontsize=24:fontcolor={color}:box=1:boxcolor=black@0.5:boxborderw=4"
     )
 
-    # 高亮圈（如果有坐标）
+    # 高亮圈：优先用 LLM 的 visual 指令，否则 A 段自动高亮 top attacker
+    highlight_pos = None
     visual = seg.get("visual", "") or ""
     if "highlight" in visual:
         m = re.search(r'pos=\(?([\d.]+)\s*,?\s*([\d.]+)', visual)
         if m:
-            px, py = _field_to_pixel(float(m.group(1)), float(m.group(2)))
-            filters.append(
-                f"drawtext=x={px-18}:y={py-18}:fontfile={font_rel}:"
-                f"text='●':fontsize=36:fontcolor=red@0.45"
-            )
+            highlight_pos = (float(m.group(1)), float(m.group(2)))
+    # 回退：A 段自动高亮 TacticAI 最强接球点
+    if highlight_pos is None and seg["speaker"] == "A" and top_attacker_pos:
+        highlight_pos = tuple(top_attacker_pos)
 
-    # 底部字幕
-    filters.append(
-        f"drawtext=x=(w-text_w)/2:y=h-60:fontfile={font_rel}:"
-        f"textfile={subtitle_file}:"
-        f"fontsize=22:fontcolor=white:box=1:boxcolor=black@0.5:boxborderw=6"
-    )
+    if highlight_pos:
+        px, py = _field_to_pixel(highlight_pos[0], highlight_pos[1],
+                                 data_x_range, data_y_range)
+        filters.append(
+            f"drawtext=x={px-18}:y={py-18}:fontfile={font_rel}:"
+            f"text='●':fontsize=36:fontcolor=red@0.55"
+        )
+
+    # 底部字幕（仅在有文本时添加）
+    if text:
+        filters.append(
+            f"drawtext=x=(w-text_w)/2:y=h-60:fontfile={font_rel}:"
+            f"textfile={subtitle_file}:"
+            f"fontsize=22:fontcolor=white:box=1:boxcolor=black@0.5:boxborderw=6"
+        )
 
     filter_str = ",".join(filters)
     try:
@@ -285,8 +343,20 @@ def _add_segment_overlays(input_clip: str, seg: dict, output_path: str, font_rel
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
         print(f"[video_overlay] Overlay failed for seg, using raw clip: {e}")
         # Fallback: copy raw clip without overlays
-        subprocess.run(["ffmpeg", "-y", "-i", input_clip, "-c", "copy", output_path],
-                       capture_output=True, check=True)
+        try:
+            subprocess.run(["ffmpeg", "-y", "-i", input_clip, "-c", "copy", output_path],
+                           capture_output=True, check=True)
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            # If even copy fails (corrupt input), generate a blank placeholder
+            print(f"[video_overlay] Copy fallback also failed, generating blank placeholder")
+            subprocess.run([
+                "ffmpeg", "-y",
+                "-f", "lavfi",
+                "-i", "color=c=0x0a1628:s=1280x720:d=2",
+                "-c:v", "libx264", "-pix_fmt", "yuv420p",
+                "-preset", "fast", "-crf", "22",
+                output_path,
+            ], capture_output=True, check=True)
 
 
 def create_titled_video(
@@ -326,13 +396,22 @@ def create_titled_video(
     elif total_dur is None:
         total_dur = video_dur
 
-    # 解析 TacticAI 预测数据，用于 auto-highlight
+    # 解析 TacticAI 预测数据，用于 auto-highlight + 自适应坐标映射
     top_attacker_pos = None
+    data_x_range = (0, 100)
+    data_y_range = (0, 100)
     if tacticai_predictions:
         attackers = [p for p in tacticai_predictions if p.get("is_attacker")]
         if attackers:
             top = max(attackers, key=lambda p: p.get("probability", 0))
             top_attacker_pos = top.get("position")
+        # 计算实际数据范围，用于自适应像素映射
+        xs = [p["position"][0] for p in tacticai_predictions]
+        ys = [p["position"][1] for p in tacticai_predictions]
+        if xs:
+            data_x_range = (min(xs), max(xs))
+        if ys:
+            data_y_range = (min(ys), max(ys))
 
     # 字体路径（无盘符相对路径）
     font_rel = _filter_path(str(_FONT_DST))
@@ -364,7 +443,8 @@ def create_titled_video(
                 _trim_clip(video_path, seg["start"], seg_dur, seg_raw)
 
             # Step 2: add overlays (speaker label, border, highlight, subtitle)
-            _add_segment_overlays(seg_raw, seg, seg_out, font_rel)
+            _add_segment_overlays(seg_raw, seg, seg_out, font_rel,
+                                  top_attacker_pos, data_x_range, data_y_range)
 
             seg_clips.append(seg_out)
 
@@ -477,7 +557,8 @@ def create_titled_video(
             highlight_pos = tuple(top_attacker_pos)
 
         if highlight_pos:
-            px, py = _field_to_pixel(highlight_pos[0], highlight_pos[1])
+            px, py = _field_to_pixel(highlight_pos[0], highlight_pos[1],
+                                     data_x_range, data_y_range)
             filters.append(
                 f"drawtext=x={px-18}:y={py-18}:fontfile={font_rel}:"
                 f"text='●':fontsize=36:fontcolor=red@0.45:"
