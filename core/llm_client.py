@@ -18,6 +18,37 @@ def create_client(base_url: str, api_key: str, timeout: int = 60) -> Anthropic:
     return Anthropic(api_key=api_key, base_url=base_url, timeout=float(timeout))
 
 
+def _extract_response_text(response, caller_tag: str, elapsed: float) -> str:
+    """Extract text from an Anthropic Messages API response.
+
+    Handles both text blocks and content blocks, raising ModelCallError
+    if the result is empty.
+
+    Args:
+        response: Anthropic API response object
+        caller_tag: Agent name tag for error messages
+        elapsed: Elapsed time in seconds for error messages
+
+    Returns:
+        Extracted text string
+
+    Raises:
+        ModelCallError: If the response contains no usable text
+    """
+    text_parts = []
+    for block in response.content:
+        if hasattr(block, "text") and block.text:
+            text_parts.append(block.text)
+        elif hasattr(block, "content") and block.content:
+            text_parts.append(str(block.content))
+
+    result = "\n".join(text_parts)
+    if not result.strip():
+        raise ModelCallError(caller_tag, f"Empty response after {elapsed:.1f}s")
+
+    return result
+
+
 def call_llm(
     client: Anthropic,
     model: str,
@@ -55,18 +86,7 @@ def call_llm(
         raise ModelCallError("llm_client", f"API call failed: {e}", original=e)
 
     elapsed = time.time() - t0
-    text_parts = []
-    for block in response.content:
-        if hasattr(block, "text") and block.text:
-            text_parts.append(block.text)
-        elif hasattr(block, "content") and block.content:
-            text_parts.append(str(block.content))
-
-    result = "\n".join(text_parts)
-    if not result.strip():
-        raise ModelCallError("llm_client", f"Empty response after {elapsed:.1f}s")
-
-    return result
+    return _extract_response_text(response, "llm_client", elapsed)
 
 
 def call_llm_multimodal(
@@ -99,6 +119,14 @@ def call_llm_multimodal(
     """
     t0 = time.time()
 
+    # Validate images before the API call
+    for i, img in enumerate(images):
+        if "data" not in img:
+            raise ModelCallError(
+                "llm_client_multimodal",
+                f"Image at index {i} is missing required 'data' key",
+            )
+
     # Build content blocks: text first, then images
     content_blocks = [{"type": "text", "text": user_text}]
     for img in images:
@@ -123,17 +151,4 @@ def call_llm_multimodal(
         raise ModelCallError("llm_client_multimodal", f"API call failed: {e}", original=e)
 
     elapsed = time.time() - t0
-    text_parts = []
-    for block in response.content:
-        if hasattr(block, "text") and block.text:
-            text_parts.append(block.text)
-        elif hasattr(block, "content") and block.content:
-            text_parts.append(str(block.content))
-
-    result = "\n".join(text_parts)
-    if not result.strip():
-        raise ModelCallError(
-            "llm_client_multimodal", f"Empty response after {elapsed:.1f}s"
-        )
-
-    return result
+    return _extract_response_text(response, "llm_client_multimodal", elapsed)
