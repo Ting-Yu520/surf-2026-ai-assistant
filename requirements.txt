@@ -6,8 +6,8 @@ streamlit>=1.32.0
 # LLM API (Anthropic 兼容格式 → DeepSeek V4)
 anthropic>=0.100.0
 
-# VLM API (Gemini 视频分析)
-google-genai>=0.3.0
+# VLM — migrated to DeepSeek via Anthropic SDK (2026-06-30)
+# google-genai removed — no longer needed
 
 # TTS (Edge TTS, 免费)
 edge-tts>=6.1.0
