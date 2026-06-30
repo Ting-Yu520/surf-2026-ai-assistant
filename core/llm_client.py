@@ -1,0 +1,69 @@
+"""Generic LLM client — OpenAI-compatible API. Zero business logic."""
+import time
+from anthropic import Anthropic
+from core.exceptions import ModelCallError
+
+
+def create_client(base_url: str, api_key: str, timeout: int = 60) -> Anthropic:
+    """Create an Anthropic-compatible client. Works with DeepSeek, OpenAI, etc.
+
+    Args:
+        base_url: API base URL
+        api_key: API key (never hardcoded)
+        timeout: Request timeout in seconds
+
+    Returns:
+        Configured Anthropic client
+    """
+    return Anthropic(api_key=api_key, base_url=base_url, timeout=float(timeout))
+
+
+def call_llm(
+    client: Anthropic,
+    model: str,
+    system_prompt: str,
+    user_message: str,
+    max_tokens: int = 2048,
+    temperature: float = 0.85,
+) -> str:
+    """Generic LLM call with error handling and timing.
+
+    Args:
+        client: Anthropic client from create_client()
+        model: Model name string
+        system_prompt: System prompt
+        user_message: User message
+        max_tokens: Max tokens to generate
+        temperature: Sampling temperature
+
+    Returns:
+        Generated text string
+
+    Raises:
+        ModelCallError: On API failure
+    """
+    t0 = time.time()
+    try:
+        response = client.messages.create(
+            model=model,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            system=system_prompt,
+            messages=[{"role": "user", "content": user_message}],
+        )
+    except Exception as e:
+        raise ModelCallError("llm_client", f"API call failed: {e}", original=e)
+
+    elapsed = time.time() - t0
+    text_parts = []
+    for block in response.content:
+        if hasattr(block, "text") and block.text:
+            text_parts.append(block.text)
+        elif hasattr(block, "content") and block.content:
+            text_parts.append(str(block.content))
+
+    result = "\n".join(text_parts)
+    if not result.strip():
+        raise ModelCallError("llm_client", f"Empty response after {elapsed:.1f}s")
+
+    return result
