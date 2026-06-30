@@ -1,7 +1,11 @@
 # Agent 3: CommentaryGen — LLM duo-commentary configuration
-model: "deepseek-v4-pro"
+model: "deepseek-v4-flash"
 base_url: "https://api.deepseek.com/anthropic"
 deepseek_api_key: ""
+# max_tokens recommendations by model:
+#   deepseek-v4-flash: 2048 (no thinking chain — pure output budget)
+#   deepseek-v4-pro:   4096 (thinking chain ~2000 + output ~2000)
+# Override via environment variable: MAX_TOKENS=4096
 max_tokens: 2048
 temperature: 0.85
 timeout: 120
