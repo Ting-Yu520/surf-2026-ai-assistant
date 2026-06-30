@@ -1,7 +1,9 @@
-# Agent 1: VideoAnalyzer — VLM keyframe analysis
-model: "gemini-2.5-flash"
-gemini_api_key: ""
+# Agent 1: VideoAnalyzer — VLM keyframe analysis via DeepSeek
+model: "deepseek-v4-flash"
+base_url: "https://api.deepseek.com/anthropic"
+deepseek_api_key: ""
 fps: 1
 max_frames: 10
+max_tokens: 2048
 resolution: [1920, 1080]
-timeout: 30
+timeout: 60
