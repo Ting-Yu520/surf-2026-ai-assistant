@@ -1,0 +1,4 @@
+# Agent 2: TacticalExtractor — Phase 1 data pipeline configuration
+batch_output_path: "src/data/phase1_batch_output.json"
+canvas_width: 1280
+canvas_height: 720

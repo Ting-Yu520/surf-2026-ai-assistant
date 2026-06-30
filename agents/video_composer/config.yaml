@@ -1,0 +1,6 @@
+# Agent 5: VideoComposer — ffmpeg video synthesis configuration
+width: 1280
+height: 720
+font_path: "C:/Windows/Fonts/msyh.ttc"
+fps: 30
+tmp_dir: "outputs/_ffmpeg_assets"
