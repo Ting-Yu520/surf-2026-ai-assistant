@@ -1,4 +1,4 @@
-"""Agent 1: VLM video frame analysis → tactical JSON."""
+"""Agent 1: VLM video frame analysis → tactical JSON via DeepSeek multimodal."""
 import base64
 import json as json_lib
 from pathlib import Path
@@ -9,19 +9,13 @@ from core.interfaces import BaseAgent, AgentInput, AgentOutput
 from core.config_loader import load_yaml_and_env
 from core.logging import get_logger
 from core.exceptions import ModelCallError
+from core.llm_client import create_client, call_llm_multimodal
 
 logger = get_logger("video_analyzer")
 
-try:
-    import google.generativeai as genai
-    HAS_GEMINI = True
-except ImportError:
-    HAS_GEMINI = False
-    logger.warning("google-generativeai not installed. VideoAnalyzer will use stub mode.")
-
 
 class VideoAnalyzer(BaseAgent):
-    """Extract tactical JSON from video keyframes using VLM (Gemini Vision)."""
+    """Extract tactical JSON from video keyframes using DeepSeek VLM."""
 
     def load_config(self) -> dict:
         return load_yaml_and_env("agents/video_analyzer/config.yaml")
@@ -40,15 +34,21 @@ class VideoAnalyzer(BaseAgent):
         if not frames_data and video_path:
             frames_data = self._extract_keyframes(video_path)
 
-        # Analyze frames with VLM
-        if HAS_GEMINI and frames_data:
-            try:
-                tactical_json = self._analyze_with_vlm(frames_data)
-            except Exception as e:
-                logger.warning(f"VLM analysis failed, using stub: {e}")
-                tactical_json = self._stub_analysis(frames_data)
-        else:
-            tactical_json = self._stub_analysis(frames_data)
+        # Analyze frames with DeepSeek VLM
+        if not frames_data:
+            return AgentOutput(
+                status="error", data={}, agent_name="video_analyzer",
+                error="No frames available for analysis",
+            )
+
+        try:
+            tactical_json = self._analyze_with_vlm(frames_data)
+        except Exception as e:
+            logger.error(f"VLM analysis failed: {e}")
+            return AgentOutput(
+                status="error", data={}, agent_name="video_analyzer",
+                error=f"VLM analysis failed: {e}",
+            )
 
         return AgentOutput(
             status="ok",
@@ -84,32 +84,39 @@ class VideoAnalyzer(BaseAgent):
         return frames
 
     def _analyze_with_vlm(self, frames: list[dict]) -> dict:
-        """Call Gemini Vision to analyze keyframes."""
-        api_key = self.config.get("gemini_api_key", "")
+        """Send keyframes to DeepSeek VLM via Anthropic-compatible API."""
+        api_key = self.config.get("deepseek_api_key", "")
         if not api_key:
-            raise ModelCallError("video_analyzer", "No GEMINI_API_KEY configured")
+            raise ModelCallError("video_analyzer", "No DEEPSEEK_API_KEY configured")
 
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel(self.config.get("model", "gemini-2.5-flash"))
+        base_url = self.config.get("base_url", "https://api.deepseek.com/anthropic")
+        model = self.config.get("model", "deepseek-v4-flash")
+        timeout = self.config.get("timeout", 60)
+        max_tokens = self.config.get("max_tokens", 2048)
+        temperature = self.config.get("temperature", 0.3)
+
+        client = create_client(base_url=base_url, api_key=api_key, timeout=timeout)
 
         prompt = self._load_prompt("frame_analysis.txt")
-        image_parts = []
+        images = []
         max_f = self.config.get("max_frames", 10)
         for frame in frames[:max_f]:
             with open(frame["path"], "rb") as img_file:
-                image_parts.append({
-                    "mime_type": "image/jpeg",
+                images.append({
+                    "media_type": "image/jpeg",
                     "data": base64.b64encode(img_file.read()).decode(),
                 })
 
-        content = [prompt] + image_parts
-        timeout_ms = self.config.get("timeout", 30) * 1000
-        response = model.generate_content(
-            content,
-            request_options={"timeout": timeout_ms},
+        text = call_llm_multimodal(
+            client=client,
+            model=model,
+            system_prompt="",
+            user_text=prompt,
+            images=images,
+            max_tokens=max_tokens,
+            temperature=temperature,
         )
 
-        text = response.text
         # Extract JSON block if wrapped in markdown
         if "```json" in text:
             text = text.split("```json")[1].split("```")[0]
@@ -118,19 +125,6 @@ class VideoAnalyzer(BaseAgent):
 
         logger.info(f"VLM response parsed ({len(text)} chars)")
         return json_lib.loads(text.strip())
-
-    def _stub_analysis(self, frames: list[dict]) -> dict:
-        """Stub mode: return empty tactical JSON when VLM not available.
-        Callers should detect and fall back to TacticalExtractor's sample data.
-        """
-        return {
-            "players": [],
-            "ball_position": None,
-            "corner_type": "",
-            "formation": "4-4-2",
-            "phase": "corner_kick",
-            "tactical_notes": "[stub] VLM not available — using simulated data",
-        }
 
     def _load_prompt(self, filename: str) -> str:
         path = Path(__file__).parent / "prompts" / filename
