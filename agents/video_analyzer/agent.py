@@ -80,7 +80,8 @@ class VideoAnalyzer(BaseAgent):
 
     def _analyze_with_vlm(self, frames: list[dict]) -> dict:
         """Call Gemini Vision to analyze keyframes."""
-        api_key = self.config.get("api_key", "")
+        import os
+        api_key = self.config.get("api_key") or os.getenv("GEMINI_API_KEY", "")
         if not api_key:
             raise ModelCallError("video_analyzer", "No GEMINI_API_KEY configured")
 

@@ -4,10 +4,14 @@ import yaml
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Load secrets.env once at module level
-_ENV_PATH = Path(__file__).parent.parent / "configs" / "secrets.env"
-if _ENV_PATH.exists():
-    load_dotenv(_ENV_PATH)
+# Load .env files once at module level (project root first, then configs/)
+_PROJECT_ROOT = Path(__file__).parent.parent
+for _env_path in [
+    _PROJECT_ROOT / ".env",
+    _PROJECT_ROOT / "configs" / "secrets.env",
+]:
+    if _env_path.exists():
+        load_dotenv(_env_path, override=False)
 
 
 def load_yaml_and_env(yaml_path: str, project_root: Path | None = None) -> dict:
