@@ -67,3 +67,73 @@ def call_llm(
         raise ModelCallError("llm_client", f"Empty response after {elapsed:.1f}s")
 
     return result
+
+
+def call_llm_multimodal(
+    client: Anthropic,
+    model: str,
+    system_prompt: str,
+    user_text: str,
+    images: list[dict],
+    max_tokens: int = 2048,
+    temperature: float = 0.7,
+) -> str:
+    """Multimodal LLM call — text + images via Anthropic Messages API.
+
+    Used by VideoAnalyzer to send keyframes to DeepSeek vision models.
+
+    Args:
+        client: Anthropic client from create_client()
+        model: Model name string (e.g. "deepseek-v4-flash")
+        system_prompt: System prompt
+        user_text: Text portion of the user message
+        images: List of {"data": "<base64_str>", "media_type": "image/jpeg"}
+        max_tokens: Max tokens to generate
+        temperature: Sampling temperature
+
+    Returns:
+        Generated text string
+
+    Raises:
+        ModelCallError: On API failure
+    """
+    t0 = time.time()
+
+    # Build content blocks: text first, then images
+    content_blocks = [{"type": "text", "text": user_text}]
+    for img in images:
+        content_blocks.append({
+            "type": "image",
+            "source": {
+                "type": "base64",
+                "media_type": img.get("media_type", "image/jpeg"),
+                "data": img["data"],
+            },
+        })
+
+    try:
+        response = client.messages.create(
+            model=model,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            system=system_prompt,
+            messages=[{"role": "user", "content": content_blocks}],
+        )
+    except Exception as e:
+        raise ModelCallError("llm_client_multimodal", f"API call failed: {e}", original=e)
+
+    elapsed = time.time() - t0
+    text_parts = []
+    for block in response.content:
+        if hasattr(block, "text") and block.text:
+            text_parts.append(block.text)
+        elif hasattr(block, "content") and block.content:
+            text_parts.append(str(block.content))
+
+    result = "\n".join(text_parts)
+    if not result.strip():
+        raise ModelCallError(
+            "llm_client_multimodal", f"Empty response after {elapsed:.1f}s"
+        )
+
+    return result
