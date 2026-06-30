@@ -1,15 +1,14 @@
 """Agent 4: TTS voice generation via Edge TTS.
 
-Migrated from src/tts_client.py. Generates per-segment audio files,
-extracts precise durations via ffprobe, and concatenates to final mp3.
+Uses moviepy for audio duration/concatenation, wave for silence — zero external tools.
 """
 import asyncio
-import json
 import os
-import subprocess
-from pathlib import Path
+import wave
+import struct
 
 import edge_tts
+from moviepy import AudioFileClip, concatenate_audioclips
 
 from core.interfaces import BaseAgent, AgentInput, AgentOutput
 from core.config_loader import load_yaml_and_env
@@ -32,7 +31,7 @@ class VoiceGenerator(BaseAgent):
         os.makedirs(output_dir, exist_ok=True)
         results = asyncio.run(self._generate_segments(segments, output_dir))
 
-        # Concatenate all segments to final audio
+        # Concatenate all segments using moviepy
         self._concat_audio(results, audio_path_out)
 
         return AgentOutput(
@@ -65,11 +64,13 @@ class VoiceGenerator(BaseAgent):
                     text=seg["narration"], voice=voice, rate=rate
                 )
                 await communicate.save(audio_path)
-                duration = self._ffprobe_duration(audio_path)
+                clip = AudioFileClip(audio_path)
+                duration = clip.duration
+                clip.close()
             except Exception as e:
                 logger.warning(f"TTS failed for segment {i}, using silence: {e}")
                 duration = 2.0
-                self._create_silent_mp3(audio_path, duration)
+                _write_silent_wav(audio_path, duration)
 
             results.append({
                 **seg,
@@ -80,52 +81,36 @@ class VoiceGenerator(BaseAgent):
         return results
 
     @staticmethod
-    def _ffprobe_duration(path: str) -> float:
-        """Get audio duration in seconds using ffprobe.
-
-        Uses ffprobe instead of moviepy to avoid mp3 compatibility issues.
-        """
-        result = subprocess.run(
-            [
-                "ffprobe", "-v", "error",
-                "-show_entries", "format=duration",
-                "-of", "json", path,
-            ],
-            capture_output=True, text=True, timeout=15,
-        )
-        data = json.loads(result.stdout)
-        return float(data["format"]["duration"])
-
-    @staticmethod
-    def _create_silent_mp3(path: str, duration: float = 2.0):
-        """Generate a silent mp3 as fallback when TTS fails."""
-        subprocess.run(
-            [
-                "ffmpeg", "-y", "-f", "lavfi", "-i",
-                f"anullsrc=r=44100:cl=mono", "-t", str(duration),
-                "-c:a", "libmp3lame", path,
-            ],
-            capture_output=True, timeout=15,
-        )
-
-    @staticmethod
     def _concat_audio(segments: list[dict], output_path: str):
-        """Concatenate audio segments using ffmpeg concat demuxer."""
-        list_path = os.path.join(
-            os.path.dirname(output_path), "_concat_list.txt"
-        )
-        with open(list_path, "w", encoding="utf-8") as f:
-            for seg in segments:
-                ap = seg.get("audio_path", "")
-                if ap and os.path.exists(ap):
-                    f.write(f"file '{os.path.abspath(ap)}'\n")
+        """Concatenate audio segments using moviepy concatenate_audioclips."""
+        clips = []
+        for seg in segments:
+            ap = seg.get("audio_path", "")
+            if ap and os.path.exists(ap):
+                try:
+                    clips.append(AudioFileClip(ap))
+                except Exception:
+                    pass
 
-        subprocess.run(
-            [
-                "ffmpeg", "-y", "-f", "concat", "-safe", "0",
-                "-i", list_path, "-c", "copy", output_path,
-            ],
-            capture_output=True, timeout=60,
-        )
+        if clips:
+            combined = concatenate_audioclips(clips)
+            combined.write_audiofile(output_path, logger=None)
+            combined.close()
+            for c in clips:
+                c.close()
+        else:
+            _write_silent_wav(output_path, 1.0)
 
-        os.unlink(list_path)
+
+def _write_silent_wav(path: str, duration: float):
+    """Write a silent WAV file using only Python stdlib (wave module)."""
+    sample_rate = 44100
+    n_samples = int(sample_rate * duration)
+    # If path ends with .mp3 but we're writing WAV, change extension
+    if path.endswith('.mp3'):
+        path = path.replace('.mp3', '.wav')
+    with wave.open(path, 'w') as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)  # 16-bit
+        wf.setframerate(sample_rate)
+        wf.writeframes(b'\x00\x00' * n_samples)

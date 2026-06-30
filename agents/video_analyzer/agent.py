@@ -1,8 +1,9 @@
 """Agent 1: VLM video frame analysis → tactical JSON."""
 import base64
 import json as json_lib
-import subprocess
 from pathlib import Path
+
+from moviepy import VideoFileClip
 
 from core.interfaces import BaseAgent, AgentInput, AgentOutput
 from core.config_loader import load_yaml_and_env
@@ -60,21 +61,25 @@ class VideoAnalyzer(BaseAgent):
         return isinstance(tj, dict) and "phase" in tj
 
     def _extract_keyframes(self, video_path: str) -> list[dict]:
-        """Extract keyframes at configured FPS using ffmpeg."""
+        """Extract keyframes at configured FPS using moviepy (zero subprocess)."""
         fps = self.config.get("fps", 1)
         max_frames = self.config.get("max_frames", 10)
         output_dir = Path("outputs/_keyframes")
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        subprocess.run([
-            "ffmpeg", "-y", "-i", video_path,
-            "-vf", f"fps={fps}", "-frames:v", str(max_frames),
-            "-q:v", "2", f"{output_dir}/frame_%03d.jpg",
-        ], capture_output=True, timeout=60)
-
+        clip = VideoFileClip(video_path)
+        duration = clip.duration
+        interval = 1.0 / fps
         frames = []
-        for f in sorted(output_dir.glob("frame_*.jpg")):
-            frames.append({"path": str(f), "timestamp": 0.0})
+
+        for i, t in enumerate([j * interval for j in range(int(duration * fps))]):
+            if i >= max_frames:
+                break
+            frame_path = output_dir / f"frame_{i+1:03d}.jpg"
+            clip.save_frame(str(frame_path), t=t)
+            frames.append({"path": str(frame_path), "timestamp": t})
+
+        clip.close()
         logger.info(f"Extracted {len(frames)} keyframes from {video_path}")
         return frames
 

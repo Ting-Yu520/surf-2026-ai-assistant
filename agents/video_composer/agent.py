@@ -1,8 +1,4 @@
-"""Agent 5: Video composition — overlays, titles, animations, final export.
-
-Delegates to src/video_overlay.py for complex ffmpeg operations.
-This Agent provides the clean interface; the legacy module does the heavy lifting.
-"""
+"""Agent 5: Video composition — moviepy-based, zero ffmpeg subprocess calls."""
 from pathlib import Path
 
 from core.interfaces import BaseAgent, AgentInput, AgentOutput
@@ -13,7 +9,7 @@ logger = get_logger("video_composer")
 
 
 class VideoComposer(BaseAgent):
-    """Compose final video with overlays, captions, and MG animations."""
+    """Compose final video with overlays, captions, and MG animations using moviepy."""
 
     def load_config(self) -> dict:
         return load_yaml_and_env("agents/video_composer/config.yaml")
@@ -37,11 +33,11 @@ class VideoComposer(BaseAgent):
             )
 
         try:
-            # Delegate to legacy ffmpeg pipeline (complex drawtext/drawbox logic)
-            from src.video_overlay import create_titled_video
-
+            from agents.video_composer.overlays.moviepy_composer import (
+                create_titled_video_moviepy,
+            )
             total_dur = timeline[-1]["end"] if timeline else None
-            create_titled_video(
+            create_titled_video_moviepy(
                 video_path=video_path,
                 audio_path=audio_path,
                 timeline=timeline,
